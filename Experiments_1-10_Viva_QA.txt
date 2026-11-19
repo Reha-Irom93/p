@@ -1,0 +1,661 @@
+VIVA QUESTIONS AND ANSWERS - EXPERIMENTS 1 TO 10
+======================================================================
+
+
+======================================================================
+EXPERIMENT 1: Introduction to Scikit-learn for Supervised Learning
+======================================================================
+
+Q1. What is supervised learning?
+Ans: Learning a mapping from input features X to a known target y using labelled examples, then predicting y for unseen data.
+
+Q2. Difference between classification and regression?
+Ans: Classification predicts a category (species, spam/not spam); regression predicts a continuous value (price, temperature).
+
+Q3. Why do we split data into training and test sets?
+Ans: The model learns on the training set; the untouched test set gives an unbiased estimate of performance on unseen data and exposes overfitting.
+
+Q4. What is the purpose of stratify=y?
+Ans: It keeps the same class proportions in the training and test sets, which matters for small or imbalanced data.
+
+Q5. Why is random_state fixed?
+Ans: So the split and results are reproducible every time the code is run.
+
+Q6. Why is feature scaling important for KNN and SVM?
+Ans: They depend on distances/margins, so a feature with a large scale would dominate; StandardScaler gives zero mean and unit variance (z = (x - mean)/std).
+
+Q7. Does a decision tree need scaling?
+Ans: No, it splits on thresholds of single features, so monotonic scaling does not change the splits.
+
+Q8. What is data leakage and how does a Pipeline prevent it?
+Ans: Leakage is information from test/validation data influencing training (e.g., fitting the scaler on all data). A Pipeline fits the scaler only on the training part of each split/fold.
+
+Q9. What does fit() and predict() do?
+Ans: fit() learns the model parameters from training data; predict() produces outputs for new samples.
+
+Q10. Define accuracy, precision, recall and F1.
+Ans: Accuracy = correct/all; precision = TP/(TP+FP); recall = TP/(TP+FN); F1 = harmonic mean of precision and recall.
+
+Q11. What does a confusion matrix show?
+Ans: For each actual class, how many samples were predicted as each class; diagonal = correct, off-diagonal = errors.
+
+Q12. What is macro average?
+Ans: The unweighted mean of the per-class metric, giving each class equal importance.
+
+Q13. What is cross-validation?
+Ans: The training data is divided into k folds; the model trains on k-1 and validates on the remaining one, repeated k times; the mean and std of the scores estimate performance and variability.
+
+Q14. What is a hyperparameter? Give examples.
+Ans: A setting chosen before training (not learned), e.g., n_neighbors, weights and p in KNN, max_depth in a tree, C in SVM.
+
+Q15. What does GridSearchCV do?
+Ans: Tries every combination of the given hyperparameters with cross-validation and selects the best by mean validation score.
+
+Q16. Why should the test set not be used during hyperparameter tuning?
+Ans: It would leak test information into model selection and make the final estimate over-optimistic.
+
+Q17. What do p=1 and p=2 mean in KNN?
+Ans: p=1 is Manhattan distance, p=2 is Euclidean distance.
+
+Q18. How does KNN classify a point?
+Ans: It finds the k nearest training points and takes the majority class among them.
+
+Q19. What does the Gini value of a tree node mean?
+Ans: Gini = 1 - sum(pk^2); 0 means all samples at the node belong to one class (pure).
+
+Q20. What is the effect of a very small k in KNN?
+Ans: k=1 gives a very flexible, noisy boundary (overfitting); a large k gives a smoother boundary and can underfit.
+
+Q21. What was the result of this experiment?
+Ans: Decision Tree and SVM(RBF) test accuracy 0.9667, Logistic Regression and KNN 0.9333; GridSearch chose KNN with k=5, p=2, uniform weights.
+
+
+======================================================================
+EXPERIMENT 2: Exploring Unsupervised Learning with K-Means Clustering
+======================================================================
+
+Q1. Why is K-Means unsupervised?
+Ans: It uses no target labels; it finds structure (groups) from the features alone.
+
+Q2. Explain the working of K-Means.
+Ans: Choose K centroids, assign each point to its nearest centroid, recompute each centroid as the mean of its points, and repeat until assignments stop changing.
+
+Q3. What does a centroid represent?
+Ans: The mean position (average feature values) of all points in a cluster.
+
+Q4. What is inertia (WCSS)?
+Ans: The sum of squared distances of points to their cluster centroid, J = sum over k of sum ||x - mu_k||^2; K-Means minimizes it.
+
+Q5. Why can inertia not select K by itself?
+Ans: It always decreases as K increases (reaching 0 when K = n), so we look for an elbow where improvement slows.
+
+Q6. What is the elbow method?
+Ans: Plot inertia against K and choose the K after which the decrease becomes small (the bend of the curve).
+
+Q7. What is the silhouette score?
+Ans: s = (b - a)/max(a, b), where a is the mean intra-cluster distance and b the mean distance to the nearest other cluster; range -1 to 1, higher is better.
+
+Q8. What does a negative silhouette value indicate?
+Ans: The point is probably assigned to the wrong cluster; another cluster fits it better.
+
+Q9. Why must features be standardized?
+Ans: K-Means uses Euclidean distance, so a feature with a larger scale would dominate the distance.
+
+Q10. Why reuse the same scaler for new data?
+Ans: New points must be in the same scale as the training data; fitting a new scaler would change the meaning of distances.
+
+Q11. What is the purpose of k-means++ and n_init?
+Ans: k-means++ spreads the initial centroids apart; n_init runs the algorithm several times and keeps the best (lowest inertia) result, reducing bad local minima.
+
+Q12. Why are cluster labels arbitrary?
+Ans: They are only identifiers (0, 1, 2...) with no rank or quality meaning; running again can permute them.
+
+Q13. How do outliers affect K-Means?
+Ans: Because centroids are means, outliers pull centroids towards them and distort clusters.
+
+Q14. Can K-Means process categorical features directly?
+Ans: No, it needs numeric features and a mean; categorical data needs encoding or algorithms such as K-Modes/K-Prototypes.
+
+Q15. When are DBSCAN or hierarchical clustering preferable?
+Ans: For non-spherical clusters, clusters of very different density/size, noise/outliers, or when K is unknown.
+
+Q16. What are the limitations of K-Means?
+Ans: K must be given in advance, sensitive to scale, outliers and initialization, and works best for compact, roughly spherical clusters.
+
+Q17. How is a new customer assigned to a cluster?
+Ans: Transform it with the fitted scaler and assign it to the nearest learned centroid using kmeans.predict().
+
+Q18. Why are centroids converted back with inverse_transform?
+Ans: They were learned in standardized space; the inverse transform expresses them in original units (income, spending) for interpretation.
+
+Q19. What K was chosen and why?
+Ans: K = 4: highest silhouette (0.7048) and elbow at K = 4; the four clusters have 80 customers each.
+
+Q20. Give a practical use of clustering.
+Ans: Customer segmentation (marketing), image compression, document grouping, anomaly detection.
+
+
+======================================================================
+EXPERIMENT 3: Implementing Linear Regression from Scratch
+======================================================================
+
+Q1. What is linear regression?
+Ans: A model that predicts a continuous target as a linear function of inputs: y_hat = b0 + b1 x.
+
+Q2. What are slope and intercept?
+Ans: Slope b1 is the average change in y for one unit increase in x; intercept b0 is the predicted y when x = 0.
+
+Q3. What is a residual?
+Ans: The difference between actual and predicted value, e = y - y_hat.
+
+Q4. State the least-squares formulas.
+Ans: b1 = sum((x - xbar)(y - ybar)) / sum((x - xbar)^2); b0 = ybar - b1 xbar.
+
+Q5. What is the cost function used?
+Ans: Mean squared error J = (1/n) sum (y - y_hat)^2.
+
+Q6. Why are residuals squared in MSE?
+Ans: So positive and negative errors do not cancel, large errors are penalized more, and the function is smooth and differentiable.
+
+Q7. Explain gradient descent.
+Ans: Starting from initial parameters, repeatedly move them opposite to the gradient of the cost: b <- b - alpha * dJ/db, until the cost converges.
+
+Q8. Write the gradient descent updates here.
+Ans: b0 <- b0 - alpha(-2/n * sum(y - y_hat)); b1 <- b1 - alpha(-2/n * sum(x(y - y_hat))).
+
+Q9. What is the learning rate? What if it is too large or too small?
+Ans: Step size alpha. Too small = slow convergence; too large = overshooting and the cost may oscillate or diverge.
+
+Q10. Parameter vs hyperparameter?
+Ans: Parameters (b0, b1) are learned from data; hyperparameters (learning rate, iterations) are set before training.
+
+Q11. Define MAE, MSE, RMSE.
+Ans: MAE = mean |error|; MSE = mean error^2; RMSE = sqrt(MSE), in the same unit as the target.
+
+Q12. What is R2?
+Ans: R2 = 1 - SS_res/SS_tot, the proportion of variance in y explained by the model.
+
+Q13. What does R2 close to 1 indicate?
+Ans: The model explains most of the variation in the target (good fit); near 0 means it explains almost none.
+
+Q14. Why does regression not establish causation?
+Ans: It only measures association in the data; confounding variables or reverse causation may explain it.
+
+Q15. Why do analytical and gradient-descent results agree?
+Ans: Both minimize the same convex MSE; with enough iterations and a suitable alpha, gradient descent converges to the least-squares solution.
+
+Q16. What does the residual plot tell you?
+Ans: Residuals should be randomly scattered around zero; patterns indicate non-linearity or non-constant variance.
+
+Q17. What are the assumptions of linear regression?
+Ans: Linearity, independence of errors, constant variance (homoscedasticity), approximately normal errors, little multicollinearity.
+
+Q18. Why is the cost curve plotted?
+Ans: A steadily decreasing, flattening curve shows gradient descent is learning and has converged.
+
+Q19. Results of this experiment?
+Ans: Score = 33.74 + 5.75 x Hours; MAE 2.7215, MSE 11.0481, RMSE 3.3239, R2 0.9557; 7.5 hours -> 76.84.
+
+Q20. What is the effect of the intercept at x = 0?
+Ans: It is the baseline prediction; it may have no practical meaning if x = 0 is outside the data range.
+
+
+======================================================================
+EXPERIMENT 4: Binary Classification with Logistic Regression
+======================================================================
+
+Q1. Why is logistic regression suitable for binary classification?
+Ans: It outputs a probability between 0 and 1 through the sigmoid function and thresholds it to choose one of two classes.
+
+Q2. Write the sigmoid function and its range.
+Ans: sigma(z) = 1/(1 + e^-z), range (0, 1); sigma(0) = 0.5.
+
+Q3. Is logistic regression a regression or classification algorithm?
+Ans: A classification algorithm; 'regression' refers to the linear model of the log-odds.
+
+Q4. What are log-odds?
+Ans: log(p/(1-p)) = beta0 + beta1 x1 + ... ; the model is linear in log-odds.
+
+Q5. What does e^beta_j mean?
+Ans: The multiplicative change in odds for a one-unit increase in feature j, other features constant.
+
+Q6. What loss function is used?
+Ans: Binary cross-entropy (log loss): J = -(1/n) sum[y log p + (1-y) log(1-p)].
+
+Q7. Why not use MSE for logistic regression?
+Ans: With the sigmoid it makes a non-convex cost with poor gradients; cross-entropy is convex and matches maximum likelihood.
+
+Q8. Write the gradient.
+Ans: dJ/dbeta = (1/n) X^T (p - y); update beta <- beta - eta * gradient.
+
+Q9. Why standardize features before gradient descent?
+Ans: Features on different scales make the loss surface elongated, causing unstable/slow gradient descent; scaling gives faster, stable convergence.
+
+Q10. What is the default decision threshold?
+Ans: 0.5: predict class 1 if P(y=1|x) >= 0.5.
+
+Q11. What does the parameter C mean in scikit-learn?
+Ans: Inverse regularization strength; smaller C = stronger regularization = smaller coefficients.
+
+Q12. Define TP, TN, FP, FN here.
+Ans: Positive = malignant. TP: malignant predicted malignant; TN: benign predicted benign; FP: benign flagged malignant; FN: malignant predicted benign.
+
+Q13. Why is accuracy alone not enough in medical screening?
+Ans: With imbalanced classes accuracy can be high while missing sick patients; false negatives are costly, so recall, precision and the confusion matrix are needed.
+
+Q14. Which metric matters most for cancer screening?
+Ans: Recall (sensitivity), since missing a malignant case is costly; precision and specificity are still reported.
+
+Q15. What is ROC-AUC?
+Ans: Area under the curve of recall vs false positive rate over all thresholds; 1.0 = perfect ranking, 0.5 = random.
+
+Q16. What happens when the threshold is lowered?
+Ans: Recall increases, but false positives increase and precision usually falls.
+
+Q17. Why choose the threshold on a validation set, not the test set?
+Ans: Choosing on the test set leaks information and gives an optimistic final estimate.
+
+Q18. What is regularization?
+Ans: A penalty on large coefficients (L2 or L1) to reduce overfitting.
+
+Q19. Can logistic regression handle multiclass problems?
+Ans: Yes, using one-vs-rest or softmax (multinomial) extension.
+
+Q20. Results of this experiment?
+Ans: Scratch model: accuracy 0.9825, precision 1.0, recall 0.9524, F1 0.9756, AUC 0.997; sklearn model: accuracy 0.9649, recall 0.9286, AUC 0.996.
+
+Q21. Is this model ready for clinical use?
+Ans: No; it is educational. Clinical use needs external validation, calibration, fairness analysis and expert review.
+
+
+======================================================================
+EXPERIMENT 5: Decision Tree Classifier for Multiclass Classification
+======================================================================
+
+Q1. How does a decision tree classify?
+Ans: It asks a series of threshold questions (x_j <= t) from the root; the sample follows branches to a leaf whose majority class is the prediction.
+
+Q2. Why is feature scaling unnecessary for a tree?
+Ans: Splits depend only on the ordering of values of one feature at a time, not on distances or magnitudes.
+
+Q3. What is Gini impurity?
+Ans: Gini(S) = 1 - sum pk^2; 0 means a pure node.
+
+Q4. What is entropy?
+Ans: Entropy(S) = - sum pk log2 pk; 0 for a pure node, maximum for equal class mix.
+
+Q5. Difference between Gini and entropy?
+Ans: Both measure impurity and usually give similar trees; Gini is slightly cheaper to compute (no logarithm), entropy is information-theoretic.
+
+Q6. What is information gain?
+Ans: The decrease in impurity (parent minus weighted child impurity) achieved by a split; the best split has the largest gain.
+
+Q7. What does max_depth control?
+Ans: The maximum height of the tree, hence its complexity.
+
+Q8. How does a tree support multiclass classification?
+Ans: Leaves hold class counts for any number of classes; the majority class is predicted, so no extension is needed.
+
+Q9. What is overfitting in trees?
+Ans: An unrestricted tree grows until leaves are pure and memorizes the training data: training accuracy 1.0 but no better (or worse) test accuracy.
+
+Q10. What is underfitting?
+Ans: A too-shallow tree cannot capture the pattern; both train and test accuracy are low.
+
+Q11. How can pruning or min_samples_split reduce overfitting?
+Ans: They stop splitting small nodes or remove weak branches, making the tree simpler and more general.
+
+Q12. What information does a confusion matrix give?
+Ans: Which classes are correctly classified and which are confused with each other.
+
+Q13. What is feature importance?
+Ans: The total impurity reduction contributed by a feature (normalized to sum 1).
+
+Q14. Which features were important and why?
+Ans: Petal length (0.9507) and petal width (0.0493); petal measurements separate the species best, sepal features got 0.
+
+Q15. Why should the test set not be used during training?
+Ans: It must stay unseen to give an unbiased estimate of generalization.
+
+Q16. What does GridSearchCV tune here?
+Ans: criterion, max_depth and min_samples_split with 5-fold CV; best was gini, depth 3, min_samples_split 2.
+
+Q17. Which classes were confused?
+Ans: Versicolor and virginica (they overlap); setosa was perfectly classified.
+
+Q18. What are advantages of decision trees?
+Ans: Interpretable, minimal preprocessing, handle nonlinear boundaries and mixed feature types.
+
+Q19. What are disadvantages?
+Ans: Prone to overfitting, unstable to small data changes, axis-parallel boundaries only; ensembles (Random Forest) fix this.
+
+Q20. What does predict_proba return for a tree?
+Ans: The fraction of training samples of each class in the leaf reached.
+
+Q21. Result of this experiment?
+Ans: Test accuracy 0.8947 (depth 3, Gini); tuned model CV accuracy 0.9375; new sample (5.8, 2.8, 4.8, 1.4) -> versicolor.
+
+
+======================================================================
+EXPERIMENT 6: Support Vector Machine (SVM) for Classification
+======================================================================
+
+Q1. What is an SVM?
+Ans: A classifier that finds the separating hyperplane with the maximum margin between classes.
+
+Q2. What are support vectors?
+Ans: The training points on or inside the margin; only they determine the decision boundary.
+
+Q3. What is the margin?
+Ans: The distance between the decision boundary and the nearest points of each class.
+
+Q4. What is the role of C?
+Ans: The penalty for training errors: large C = narrow margin, fits training data closely (risk of overfitting); small C = wider margin, simpler boundary.
+
+Q5. What is a soft margin?
+Ans: A margin that allows some misclassification/violations so non-separable data can be handled.
+
+Q6. What is the kernel trick?
+Ans: Computing inner products as if data were mapped to a higher-dimensional space without explicitly doing the mapping, enabling nonlinear boundaries.
+
+Q7. Name common kernels and their formulas.
+Ans: Linear x.x'; Polynomial (gamma x.x' + r)^d; RBF exp(-gamma ||x - x'||^2).
+
+Q8. What does gamma do in the RBF kernel?
+Ans: Controls the reach of each training example: small gamma = smooth boundary (can underfit), large gamma = intricate boundary (can overfit).
+
+Q9. Why is feature scaling important for SVM?
+Ans: SVM uses distances/dot products, so large-scale features dominate; scaling gives all features equal influence.
+
+Q10. Why use a Pipeline with StandardScaler?
+Ans: So the scaler is fitted only on the training data and avoids leakage.
+
+Q11. How does SVC handle multiple classes?
+Ans: One-versus-one: a classifier for each pair of classes, with votes combined.
+
+Q12. Why is the two-moons data unsuitable for a linear SVM?
+Ans: The classes are interleaved crescents and not linearly separable; a straight line misclassifies many points.
+
+Q13. Which kernel performed best and why?
+Ans: RBF (macro F1 0.927 vs linear 0.866, polynomial 0.860) because it forms a flexible curved boundary.
+
+Q14. Why use macro-averaged metrics?
+Ans: They give each class equal weight in multiclass problems.
+
+Q15. What sign of overfitting appears when gamma is large?
+Ans: Very intricate, wiggly boundaries around individual points, high training accuracy but lower test accuracy.
+
+Q16. How should C and gamma be tuned?
+Ans: With cross-validation (GridSearchCV) on the training data, keeping the test set for final evaluation.
+
+Q17. Can SVM output probabilities?
+Ans: Not directly; SVC(probability=True) uses Platt scaling via internal cross-validation.
+
+Q18. Advantages of SVM?
+Ans: Effective in high dimensions, memory efficient (uses support vectors), flexible kernels, strong with clear margins.
+
+Q19. Disadvantages of SVM?
+Ans: Slow on very large datasets, needs scaling and tuning, poor with heavy noise, less interpretable.
+
+Q20. Result of the multiclass experiment?
+Ans: RBF SVM on 3 classes: accuracy and macro F1 0.916; C/gamma grid test accuracy ranged 0.853 to 0.947.
+
+
+======================================================================
+EXPERIMENT 7: Ensemble Learning with Random Forests
+======================================================================
+
+Q1. What is ensemble learning?
+Ans: Combining multiple models to get a more accurate and stable prediction than any single model.
+
+Q2. What is a Random Forest?
+Ans: An ensemble of many decision trees trained on bootstrap samples with random feature subsets at each split; classification by voting, regression by averaging.
+
+Q3. What is bootstrap sampling (bagging)?
+Ans: Sampling the training data with replacement to create a different training set for each tree.
+
+Q4. What are out-of-bag samples?
+Ans: About one third of samples not drawn into a tree's bootstrap sample; they can be used to validate that tree.
+
+Q5. Why random feature selection at each split?
+Ans: It decorrelates trees so that averaging reduces variance more effectively.
+
+Q6. Why does a forest reduce variance?
+Ans: Averaging many diverse, low-bias high-variance trees cancels individual errors.
+
+Q7. Bias vs variance of a single deep tree?
+Ans: Low bias, high variance (overfits).
+
+Q8. Important hyperparameters?
+Ans: n_estimators (number of trees), max_depth, max_features, min_samples_split/leaf.
+
+Q9. What happens as the number of trees increases?
+Ans: Performance improves then plateaus (here 0.847 -> 0.863 -> 0.867 for 10/100/300), while time and memory grow; it does not overfit more with more trees.
+
+Q10. How is feature importance computed?
+Ans: Mean impurity reduction a feature gives across all trees.
+
+Q11. Limitations of impurity-based importance?
+Ans: Not causal; biased towards high-cardinality or large-scale features; can be unreliable for correlated features.
+
+Q12. Single tree vs forest in this experiment?
+Ans: Tree: train accuracy 1.0, test 0.810 (overfit); forest (100 trees): test 0.863; CV mean 0.898 vs 0.817.
+
+Q13. Why use cross-validation here?
+Ans: A single split gives one estimate; CV mean and std show performance and stability.
+
+Q14. How does a forest do regression?
+Ans: Averages the predictions of all trees.
+
+Q15. Regression results?
+Ans: Unrestricted forest: MAE 17.21, RMSE 22.40, R2 0.898; max_depth=4: MAE 21.63, RMSE 27.52, R2 0.846.
+
+Q16. Does Random Forest need feature scaling?
+Ans: No, trees are insensitive to monotonic scaling.
+
+Q17. Random Forest vs Gradient Boosting?
+Ans: RF builds trees independently in parallel and averages (reduces variance); boosting builds trees sequentially to correct previous errors (reduces bias).
+
+Q18. Advantages of Random Forests?
+Ans: Strong accuracy, robust to overfitting and noise, handles nonlinear data, gives feature importance.
+
+Q19. Disadvantages?
+Ans: Larger, slower and less interpretable than a single tree.
+
+Q20. Which features were most important?
+Ans: Feature 11 (0.2164), Feature 12 (0.1484) and Feature 4 (0.1188).
+
+
+======================================================================
+EXPERIMENT 8: Evaluation Metrics for Classification Models
+======================================================================
+
+Q1. What is a confusion matrix?
+Ans: A table of counts of TP, TN, FP and FN comparing actual and predicted classes.
+
+Q2. Define TP, TN, FP, FN (malignant = positive).
+Ans: TP: malignant predicted malignant; TN: benign predicted benign; FP: benign predicted malignant; FN: malignant predicted benign.
+
+Q3. Formula for accuracy?
+Ans: (TP + TN)/(TP + TN + FP + FN).
+
+Q4. Formula for precision?
+Ans: TP/(TP + FP): of predicted positives, how many are truly positive.
+
+Q5. Formula for recall (sensitivity)?
+Ans: TP/(TP + FN): of real positives, how many were found.
+
+Q6. Formula for specificity?
+Ans: TN/(TN + FP): of real negatives, how many were correctly identified.
+
+Q7. What is the F1-score?
+Ans: The harmonic mean of precision and recall, 2PR/(P + R).
+
+Q8. Why can accuracy be misleading?
+Ans: With unequal class counts a model predicting the majority class can score high accuracy yet find no positives.
+
+Q9. What is the ROC curve?
+Ans: Plot of true positive rate against false positive rate as the threshold varies.
+
+Q10. What is AUC?
+Ans: Area under the ROC curve; 1.0 perfect, 0.5 random.
+
+Q11. What is the effect of increasing the threshold?
+Ans: Fewer positive predictions: false positives fall (precision rises) but false negatives rise (recall falls).
+
+Q12. Which metric is most important when missing a malignant case is costly?
+Ans: Recall, because false negatives are missed cases.
+
+Q13. Why is the model inside a pipeline with StandardScaler?
+Ans: So scaling is fitted only on training data and applied consistently to test data.
+
+Q14. What is a classification report?
+Ans: Per-class precision, recall, F1 and support.
+
+Q15. What does support mean?
+Ans: The number of true samples of each class in the test set.
+
+Q16. Precision-recall trade-off?
+Ans: Improving one usually reduces the other; the threshold sets the balance according to application cost.
+
+Q17. Why stratified split?
+Ans: Keeps class proportions in both train and test sets.
+
+Q18. Results of this experiment?
+Ans: TN 89, FP 1, FN 4, TP 49; accuracy 0.9650, precision 0.9800, recall 0.9245, specificity 0.9889, F1 0.9515, AUC 0.9962.
+
+Q19. What changed at threshold 0.30 vs 0.70?
+Ans: 0.30: recall 0.962 (FN 2), precision 0.981; 0.70: precision 1.0 (FP 0), recall 0.906 (FN 5).
+
+Q20. When prefer precision over recall?
+Ans: When false positives are costly (e.g., spam filtering of important mail, costly follow-up actions).
+
+
+======================================================================
+EXPERIMENT 9: Model Selection Techniques
+======================================================================
+
+Q1. What is model selection?
+Ans: Choosing, among candidate algorithms and hyperparameters, the one expected to generalize best to unseen data.
+
+Q2. Why not select by training accuracy?
+Ans: A flexible model can fit training data perfectly (overfit) yet generalize badly.
+
+Q3. What is k-fold cross-validation?
+Ans: Splitting the training data into k folds; train on k-1, validate on the held-out fold, repeat k times and average.
+
+Q4. What is stratified k-fold?
+Ans: Each fold keeps the class proportions of the full data.
+
+Q5. What does GridSearchCV do?
+Ans: Evaluates every combination in the parameter grid by cross-validation and picks the best mean score, then refits it on the whole training set.
+
+Q6. What does the list of param grids allow?
+Ans: Comparing different model families (Logistic Regression, SVC, Random Forest) with their own hyperparameters in one search.
+
+Q7. Why must preprocessing be inside the pipeline?
+Ans: So the scaler is fitted inside each training fold; otherwise validation information leaks and scores are optimistic.
+
+Q8. Why keep the test set separate until the end?
+Ans: To obtain one unbiased estimate of generalization; using it for choices would bias it.
+
+Q9. What is refit in GridSearchCV?
+Ans: Refitting the best configuration on the full training set, available as best_estimator_.
+
+Q10. Why is accuracy appropriate here?
+Ans: Iris is balanced (50 per class); for imbalanced data use precision, recall, F1.
+
+Q11. What does std_test_score show?
+Ans: The variability of the validation score across folds.
+
+Q12. What does return_train_score show?
+Ans: Training scores per candidate, to detect overfitting (high train vs lower validation).
+
+Q13. Which model was selected?
+Ans: SVC with C = 0.1 and linear kernel, mean CV accuracy 0.975.
+
+Q14. Test result?
+Ans: Test accuracy 0.933 (28/30); setosa perfect, versicolor and virginica precision/recall 0.90.
+
+Q15. Why is test accuracy slightly lower than CV accuracy?
+Ans: Small test set (30 samples; one error = 3.3%) and normal sampling variation.
+
+Q16. Bias-variance trade-off in selection?
+Ans: Simple models have high bias/low variance, complex ones low bias/high variance; CV helps find the balance.
+
+Q17. Name other model selection tools.
+Ans: Train/validation/test split, leave-one-out CV, RandomizedSearchCV, AIC/BIC, nested cross-validation.
+
+Q18. What is nested cross-validation?
+Ans: An outer CV for performance estimation with an inner CV for tuning, giving an unbiased estimate when tuning.
+
+Q19. Precautions in this experiment?
+Ans: Do not tune on the test set; keep preprocessing in the pipeline; use extra metrics for imbalanced data.
+
+Q20. Why use shuffle=True with random_state in StratifiedKFold?
+Ans: Randomizes the order to avoid ordered-data artifacts while keeping the results reproducible.
+
+
+======================================================================
+EXPERIMENT 10: Hyperparameter Tuning and Optimization
+======================================================================
+
+Q1. Parameters vs hyperparameters?
+Ans: Parameters are learned from data; hyperparameters are chosen before training and control learning or complexity.
+
+Q2. Main hyperparameters of an SVC?
+Ans: kernel, C (error penalty) and gamma (reach of a training example).
+
+Q3. Why create a baseline model?
+Ans: To measure whether tuning actually improves performance.
+
+Q4. How does GridSearchCV work?
+Ans: Tries all combinations of the grid with stratified CV; here 4 C x 4 gamma x 2 kernels = 32 combinations x 5 folds.
+
+Q5. How does RandomizedSearchCV work?
+Ans: Samples n_iter combinations (30 here) from distributions, evaluating each with CV.
+
+Q6. Difference between grid and randomized search?
+Ans: Grid is exhaustive and reproducible but costly; randomized covers larger or continuous spaces under a fixed budget and often finds good settings faster.
+
+Q7. Why sample C and gamma log-uniformly?
+Ans: Their useful values span several orders of magnitude.
+
+Q8. Why use F1 as the scoring metric?
+Ans: It balances precision and recall.
+
+Q9. Why must the test set not be used to choose hyperparameters?
+Ans: It would leak test information, so the final score would no longer be an independent estimate.
+
+Q10. What is refit=True?
+Ans: The best configuration is refitted on the entire training set after the search.
+
+Q11. Why is the scaler inside the Pipeline?
+Ans: So it is fitted only on each training fold, preventing leakage.
+
+Q12. What does the CV results table show?
+Ans: Rank, mean/std validation score and mean training score for each candidate; a large gap indicates overfitting.
+
+Q13. What did grid search select?
+Ans: C = 0.1, gamma = 'scale', linear kernel; best CV F1 0.9810.
+
+Q14. What did randomized search select?
+Ans: Linear kernel, C about 0.0736, gamma about 0.0009; best CV F1 0.9844.
+
+Q15. Did tuning improve test performance?
+Ans: No; baseline and both tuned models got accuracy 0.9825 and F1 0.9861, because the default SVC was already near-optimal.
+
+Q16. Why is gamma irrelevant for a linear kernel?
+Ans: Gamma only appears in RBF, polynomial and sigmoid kernels.
+
+Q17. What is overfitting during tuning?
+Ans: Choosing settings that fit the validation folds by chance; guarded by an independent test set or nested CV.
+
+Q18. Other tuning methods?
+Ans: Bayesian optimization (Optuna), successive halving, genetic algorithms, manual search.
+
+Q19. What happens with very large C?
+Ans: Narrow margin, fits training noise, higher risk of overfitting.
+
+Q20. Why use stratified folds?
+Ans: To keep class proportions in every fold, giving stable estimates.

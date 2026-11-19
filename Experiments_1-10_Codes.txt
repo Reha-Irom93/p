@@ -1,0 +1,1435 @@
+PYTHON CODE FOR EXPERIMENTS 1-10 (cells in notebook order)
+======================================================================
+
+
+######################################################################
+# EXPERIMENT 1: Introduction to Scikit-learn for Supervised Learning
+######################################################################
+
+# ---- Cell 1 ----
+import warnings
+warnings.filterwarnings('ignore')
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sklearn
+
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.svm import SVC
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix, classification_report,
+    precision_score, recall_score, f1_score
+)
+
+print('Scikit-learn version:', sklearn.__version__)
+
+# ---- Cell 2 ----
+iris = load_iris(as_frame=True)
+X = iris.data
+y = iris.target
+
+df = X.copy()
+df['target'] = y
+df['species'] = y.map(dict(enumerate(iris.target_names)))
+
+print('Feature names:', list(X.columns))
+print('Target names:', list(iris.target_names))
+print('Dataset shape:', df.shape)
+display(df.head())
+
+# ---- Cell 3 ----
+print('Data types and missing values:')
+display(pd.DataFrame({'dtype': X.dtypes, 'missing': X.isna().sum()}))
+
+print('\nDescriptive statistics:')
+display(X.describe().round(2))
+
+print('\nClass distribution:')
+display(df['species'].value_counts())
+
+# ---- Cell 4 ----
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=df, x='petal length (cm)', y='petal width (cm)',
+                hue='species', style='species', s=90)
+plt.title('Iris flowers by petal measurements')
+plt.grid(alpha=0.2)
+plt.show()
+
+# ---- Cell 5 ----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, random_state=42, stratify=y
+)
+
+print('Training samples:', X_train.shape[0])
+print('Testing samples:', X_test.shape[0])
+print('Training class counts:', y_train.value_counts().sort_index().to_dict())
+print('Testing class counts:', y_test.value_counts().sort_index().to_dict())
+
+# ---- Cell 6 ----
+logistic_model = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', LogisticRegression(max_iter=1000, random_state=42))
+])
+
+logistic_model.fit(X_train, y_train)
+y_pred_lr = logistic_model.predict(X_test)
+
+print('Accuracy:', round(accuracy_score(y_test, y_pred_lr), 4))
+print('\nClassification report:')
+print(classification_report(y_test, y_pred_lr, target_names=iris.target_names))
+
+# ---- Cell 7 ----
+cm = confusion_matrix(y_test, y_pred_lr)
+plt.figure(figsize=(6, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=iris.target_names, yticklabels=iris.target_names)
+plt.xlabel('Predicted class')
+plt.ylabel('Actual class')
+plt.title('Logistic Regression — Confusion Matrix')
+plt.show()
+
+# ---- Cell 8 ----
+models = {
+    'Logistic Regression': Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', LogisticRegression(max_iter=1000, random_state=42))
+    ]),
+    'KNN': Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', KNeighborsClassifier(n_neighbors=5))
+    ]),
+    'Decision Tree': DecisionTreeClassifier(max_depth=3, random_state=42),
+    'SVM (RBF)': Pipeline([
+        ('scaler', StandardScaler()),
+        ('classifier', SVC(kernel='rbf', probability=True, random_state=42))
+    ])
+}
+
+results = []
+predictions = {}
+
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
+    predictions[name] = pred
+    results.append({
+        'Model': name,
+        'Accuracy': accuracy_score(y_test, pred),
+        'Macro Precision': precision_score(y_test, pred, average='macro'),
+        'Macro Recall': recall_score(y_test, pred, average='macro'),
+        'Macro F1': f1_score(y_test, pred, average='macro')
+    })
+
+results_df = pd.DataFrame(results).sort_values('Macro F1', ascending=False)
+display(results_df.round(4))
+
+# ---- Cell 9 ----
+plot_df = results_df.melt(id_vars='Model', var_name='Metric', value_name='Score')
+plt.figure(figsize=(10, 5))
+sns.barplot(data=plot_df, x='Model', y='Score', hue='Metric')
+plt.ylim(0.80, 1.02)
+plt.title('Test-set performance comparison')
+plt.xticks(rotation=15)
+plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 10 ----
+cv_results = []
+for name, model in models.items():
+    scores = cross_val_score(model, X_train, y_train, cv=5, scoring='accuracy')
+    cv_results.append({
+        'Model': name,
+        'Fold scores': np.round(scores, 3),
+        'Mean CV accuracy': scores.mean(),
+        'Std. deviation': scores.std()
+    })
+
+cv_df = pd.DataFrame(cv_results).sort_values('Mean CV accuracy', ascending=False)
+display(cv_df)
+
+# ---- Cell 11 ----
+knn_pipeline = Pipeline([
+    ('scaler', StandardScaler()),
+    ('classifier', KNeighborsClassifier())
+])
+
+parameter_grid = {
+    'classifier__n_neighbors': list(range(1, 16)),
+    'classifier__weights': ['uniform', 'distance'],
+    'classifier__p': [1, 2]  # 1 = Manhattan; 2 = Euclidean distance
+}
+
+grid_search = GridSearchCV(
+    estimator=knn_pipeline,
+    param_grid=parameter_grid,
+    cv=5,
+    scoring='accuracy',
+    n_jobs=-1
+)
+grid_search.fit(X_train, y_train)
+
+print('Best parameters:', grid_search.best_params_)
+print('Best cross-validation accuracy:', round(grid_search.best_score_, 4))
+
+best_knn = grid_search.best_estimator_
+y_pred_tuned = best_knn.predict(X_test)
+print('Tuned KNN test accuracy:', round(accuracy_score(y_test, y_pred_tuned), 4))
+
+# ---- Cell 12 ----
+tree_model = models['Decision Tree']
+plt.figure(figsize=(14, 7))
+plot_tree(tree_model, feature_names=X.columns, class_names=iris.target_names,
+          filled=True, rounded=True, fontsize=9)
+plt.title('Decision Tree learned from the training data')
+plt.show()
+
+# ---- Cell 13 ----
+new_flowers = pd.DataFrame(
+    [[5.1, 3.5, 1.4, 0.2],
+     [6.0, 2.9, 4.5, 1.5],
+     [6.7, 3.1, 5.6, 2.4]],
+    columns=X.columns
+)
+
+predicted_ids = best_knn.predict(new_flowers)
+probabilities = best_knn.predict_proba(new_flowers)
+
+prediction_table = new_flowers.copy()
+prediction_table['predicted_species'] = iris.target_names[predicted_ids]
+for index, species in enumerate(iris.target_names):
+    prediction_table[f'P({species})'] = probabilities[:, index]
+
+display(prediction_table.round(3))
+
+
+######################################################################
+# EXPERIMENT 2: Exploring Unsupervised Learning with K-Means Clustering
+######################################################################
+
+# ---- Cell 1 ----
+# Import required libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+from sklearn.metrics import silhouette_score, silhouette_samples
+from sklearn.preprocessing import StandardScaler
+
+RANDOM_STATE = 42
+np.random.seed(RANDOM_STATE)
+sns.set_theme(style='whitegrid', context='notebook')
+print('Libraries imported successfully.')
+
+# ---- Cell 2 ----
+centers = [(28, 25), (32, 78), (68, 30), (72, 75)]
+cluster_std = [6.5, 7.0, 7.5, 6.0]
+X_raw, _ = make_blobs(
+    n_samples=320, centers=centers, cluster_std=cluster_std,
+    random_state=RANDOM_STATE
+)
+
+df = pd.DataFrame(X_raw, columns=['Annual Income (₹ lakh scaled)', 'Spending Score'])
+df['Annual Income (₹ lakh scaled)'] = df['Annual Income (₹ lakh scaled)'].clip(10, 100)
+df['Spending Score'] = df['Spending Score'].clip(1, 100)
+
+print('Dataset shape:', df.shape)
+display(df.head(10))
+
+# ---- Cell 3 ----
+df.info()
+print('\nMissing values:')
+display(df.isna().sum().to_frame('Missing'))
+print('Summary statistics:')
+display(df.describe().round(2))
+
+# ---- Cell 4 ----
+fig, axes = plt.subplots(1, 3, figsize=(17, 4.5))
+sns.histplot(df.iloc[:, 0], kde=True, ax=axes[0], color='steelblue')
+axes[0].set_title('Income Distribution')
+sns.histplot(df.iloc[:, 1], kde=True, ax=axes[1], color='darkorange')
+axes[1].set_title('Spending Score Distribution')
+sns.scatterplot(data=df, x=df.columns[0], y=df.columns[1], ax=axes[2], s=50)
+axes[2].set_title('Customers Before Clustering')
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 5 ----
+features = df.columns.tolist()
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(df[features])
+scaled_df = pd.DataFrame(X_scaled, columns=features)
+display(scaled_df.describe().round(3))
+
+# ---- Cell 6 ----
+k_values = range(2, 11)
+inertias, silhouette_scores = [], []
+
+for k in k_values:
+    model = KMeans(n_clusters=k, init='k-means++', n_init=20, random_state=RANDOM_STATE)
+    labels = model.fit_predict(X_scaled)
+    inertias.append(model.inertia_)
+    silhouette_scores.append(silhouette_score(X_scaled, labels))
+
+evaluation = pd.DataFrame({
+    'K': list(k_values), 'Inertia': inertias, 'Silhouette Score': silhouette_scores
+})
+display(evaluation.round(4))
+
+# ---- Cell 7 ----
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+axes[0].plot(list(k_values), inertias, marker='o')
+axes[0].set(title='Elbow Method', xlabel='Number of clusters (K)', ylabel='Inertia')
+axes[1].plot(list(k_values), silhouette_scores, marker='o', color='darkgreen')
+axes[1].set(title='Silhouette Analysis', xlabel='Number of clusters (K)', ylabel='Silhouette score')
+axes[1].set_ylim(0, 1)
+plt.tight_layout()
+plt.show()
+
+best_k_by_silhouette = int(evaluation.loc[evaluation['Silhouette Score'].idxmax(), 'K'])
+print('Best K by silhouette score:', best_k_by_silhouette)
+
+# ---- Cell 8 ----
+FINAL_K = 4
+kmeans = KMeans(
+    n_clusters=FINAL_K, init='k-means++', n_init=20,
+    max_iter=300, random_state=RANDOM_STATE
+)
+df['Cluster'] = kmeans.fit_predict(X_scaled)
+
+print('Iterations used:', kmeans.n_iter_)
+print('Final inertia:', round(kmeans.inertia_, 3))
+print('Silhouette score:', round(silhouette_score(X_scaled, df['Cluster']), 3))
+display(df.head())
+
+# ---- Cell 9 ----
+centroids_original = scaler.inverse_transform(kmeans.cluster_centers_)
+centroids_df = pd.DataFrame(centroids_original, columns=features)
+centroids_df.index.name = 'Cluster'
+display(centroids_df.round(2))
+
+plt.figure(figsize=(9, 6))
+sns.scatterplot(
+    data=df, x=features[0], y=features[1], hue='Cluster',
+    palette='tab10', s=65, alpha=0.75
+)
+plt.scatter(
+    centroids_original[:, 0], centroids_original[:, 1],
+    c='black', marker='X', s=260, label='Centroids', edgecolors='white'
+)
+plt.title('K-Means Customer Segments')
+plt.legend(title='Cluster', bbox_to_anchor=(1.02, 1), loc='upper left')
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 10 ----
+cluster_profile = df.groupby('Cluster').agg(
+    Customers=('Cluster', 'size'),
+    Mean_Income=(features[0], 'mean'),
+    Mean_Spending=(features[1], 'mean')
+).round(2)
+cluster_profile['Percentage'] = (100 * cluster_profile['Customers'] / len(df)).round(1)
+display(cluster_profile)
+
+income_mid = df[features[0]].median()
+spending_mid = df[features[1]].median()
+
+def describe_segment(row):
+    income = 'High-income' if row['Mean_Income'] >= income_mid else 'Lower-income'
+    spending = 'high-spending' if row['Mean_Spending'] >= spending_mid else 'low-spending'
+    return f'{income}, {spending}'
+
+cluster_profile['Suggested Segment'] = cluster_profile.apply(describe_segment, axis=1)
+display(cluster_profile[['Suggested Segment']])
+
+# ---- Cell 11 ----
+df['Silhouette'] = silhouette_samples(X_scaled, df['Cluster'])
+display(df.groupby('Cluster')['Silhouette'].agg(['mean', 'min', 'max']).round(3))
+
+plt.figure(figsize=(9, 4.5))
+sns.boxplot(data=df, x='Cluster', y='Silhouette', hue='Cluster', palette='tab10', legend=False)
+plt.axhline(0, color='red', linestyle='--', linewidth=1)
+plt.title('Silhouette Values by Cluster')
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 12 ----
+new_customers = pd.DataFrame({
+    features[0]: [25, 75, 30, 70],
+    features[1]: [20, 80, 85, 25]
+})
+new_scaled = scaler.transform(new_customers)
+new_customers['Predicted Cluster'] = kmeans.predict(new_scaled)
+new_customers['Suggested Segment'] = new_customers['Predicted Cluster'].map(
+    cluster_profile['Suggested Segment']
+)
+display(new_customers)
+
+
+######################################################################
+# EXPERIMENT 3: Implementing Linear Regression from Scratch
+######################################################################
+
+# ---- Cell 1 ----
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(42)
+plt.style.use('seaborn-v0_8-whitegrid')
+
+# ---- Cell 2 ----
+X = np.linspace(1, 10, 30)
+noise = np.random.normal(0, 4, size=X.shape)
+y = 32 + 6.2 * X + noise
+
+data = pd.DataFrame({'Study Hours': X, 'Exam Score': y})
+display(data.head())
+print(f'Number of observations: {len(data)}')
+print(data.describe().round(2))
+
+# ---- Cell 3 ----
+plt.figure(figsize=(8, 5))
+plt.scatter(X, y, color='royalblue', edgecolor='black', alpha=0.8)
+plt.xlabel('Study Hours')
+plt.ylabel('Exam Score')
+plt.title('Study Hours versus Exam Score')
+plt.show()
+
+# ---- Cell 4 ----
+def fit_analytical(x, target):
+    x_mean = np.mean(x)
+    y_mean = np.mean(target)
+    numerator = np.sum((x - x_mean) * (target - y_mean))
+    denominator = np.sum((x - x_mean) ** 2)
+    slope = numerator / denominator
+    intercept = y_mean - slope * x_mean
+    return intercept, slope
+
+b0_analytical, b1_analytical = fit_analytical(X, y)
+y_pred_analytical = b0_analytical + b1_analytical * X
+
+print(f'Intercept (b0): {b0_analytical:.4f}')
+print(f'Slope (b1):     {b1_analytical:.4f}')
+print(f'Equation: Score = {b0_analytical:.2f} + {b1_analytical:.2f} × Study Hours')
+
+# ---- Cell 5 ----
+plt.figure(figsize=(8, 5))
+plt.scatter(X, y, label='Actual data', color='royalblue', edgecolor='black')
+plt.plot(X, y_pred_analytical, label='Best-fit line', color='crimson', linewidth=2.5)
+plt.xlabel('Study Hours')
+plt.ylabel('Exam Score')
+plt.title('Analytical Linear Regression')
+plt.legend()
+plt.show()
+
+# ---- Cell 6 ----
+def fit_gradient_descent(x, target, learning_rate=0.01, iterations=3000):
+    intercept, slope = 0.0, 0.0
+    n = len(x)
+    cost_history = []
+
+    for _ in range(iterations):
+        predictions = intercept + slope * x
+        errors = target - predictions
+        cost_history.append(np.mean(errors ** 2))
+
+        intercept_gradient = (-2 / n) * np.sum(errors)
+        slope_gradient = (-2 / n) * np.sum(x * errors)
+        intercept -= learning_rate * intercept_gradient
+        slope -= learning_rate * slope_gradient
+
+    return intercept, slope, np.array(cost_history)
+
+b0_gd, b1_gd, costs = fit_gradient_descent(X, y)
+y_pred_gd = b0_gd + b1_gd * X
+
+print(f'Gradient-descent intercept: {b0_gd:.4f}')
+print(f'Gradient-descent slope:     {b1_gd:.4f}')
+print(f'Final MSE:                  {costs[-1]:.4f}')
+
+# ---- Cell 7 ----
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+axes[0].plot(costs, color='darkorange')
+axes[0].set_title('Convergence of Gradient Descent')
+axes[0].set_xlabel('Iteration')
+axes[0].set_ylabel('Mean Squared Error')
+
+axes[1].scatter(X, y, color='royalblue', edgecolor='black', label='Actual data')
+axes[1].plot(X, y_pred_gd, color='green', linewidth=2.5, label='Gradient-descent line')
+axes[1].set_title('Fitted Regression Line')
+axes[1].set_xlabel('Study Hours')
+axes[1].set_ylabel('Exam Score')
+axes[1].legend()
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 8 ----
+def regression_metrics(actual, predicted):
+    residuals = actual - predicted
+    mae = np.mean(np.abs(residuals))
+    mse = np.mean(residuals ** 2)
+    rmse = np.sqrt(mse)
+    ss_res = np.sum(residuals ** 2)
+    ss_tot = np.sum((actual - np.mean(actual)) ** 2)
+    r2 = 1 - ss_res / ss_tot
+    return {'MAE': mae, 'MSE': mse, 'RMSE': rmse, 'R²': r2}
+
+results = pd.DataFrame({
+    'Analytical': regression_metrics(y, y_pred_analytical),
+    'Gradient Descent': regression_metrics(y, y_pred_gd)
+}).T
+display(results.round(4))
+
+# ---- Cell 9 ----
+residuals = y - y_pred_analytical
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+axes[0].scatter(y_pred_analytical, residuals, color='purple', edgecolor='black')
+axes[0].axhline(0, color='red', linestyle='--')
+axes[0].set_xlabel('Predicted Score')
+axes[0].set_ylabel('Residual')
+axes[0].set_title('Residual Plot')
+
+axes[1].scatter(y, y_pred_analytical, color='teal', edgecolor='black')
+limits = [min(y.min(), y_pred_analytical.min()), max(y.max(), y_pred_analytical.max())]
+axes[1].plot(limits, limits, 'r--', label='Ideal prediction')
+axes[1].set_xlabel('Actual Score')
+axes[1].set_ylabel('Predicted Score')
+axes[1].set_title('Actual versus Predicted')
+axes[1].legend()
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 10 ----
+def predict(x_new, intercept, slope):
+    return intercept + slope * np.asarray(x_new)
+
+new_hours = 7.5
+predicted_score = predict(new_hours, b0_analytical, b1_analytical)
+print(f'Predicted score for {new_hours} study hours: {predicted_score:.2f}')
+
+
+######################################################################
+# EXPERIMENT 4: Binary Classification with Logistic Regression
+######################################################################
+
+# ---- Cell 1 ----
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+try:
+    from IPython.display import display
+except ImportError:
+    def display(obj):
+        print(obj)
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    confusion_matrix, classification_report, roc_auc_score,
+    roc_curve
+)
+
+sns.set_theme(style='whitegrid')
+RANDOM_STATE = 42
+np.random.seed(RANDOM_STATE)
+
+# ---- Cell 2 ----
+def sigmoid(z):
+    # Clipping avoids overflow when z is very large in magnitude.
+    z = np.clip(z, -500, 500)
+    return 1 / (1 + np.exp(-z))
+
+z_values = np.linspace(-8, 8, 400)
+plt.figure(figsize=(8, 4))
+plt.plot(z_values, sigmoid(z_values), linewidth=2.5)
+plt.axhline(0.5, color='gray', linestyle='--', label='0.5 threshold')
+plt.axvline(0, color='gray', linestyle=':')
+plt.xlabel('Linear score z')
+plt.ylabel('P(y = 1 | x)')
+plt.title('Sigmoid function')
+plt.legend()
+plt.show()
+
+# ---- Cell 3 ----
+data = load_breast_cancer(as_frame=True)
+X = data.data.copy()
+# sklearn encodes malignant as 0 and benign as 1; invert it so 1 = malignant.
+y = (data.target == 0).astype(int)
+
+print(f'Samples: {X.shape[0]}')
+print(f'Features: {X.shape[1]}')
+print('Class counts:')
+print(pd.Series(y, name='malignant').value_counts().rename({0: 'benign', 1: 'malignant'}))
+display(X.head())
+
+# ---- Cell 4 ----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, stratify=y, random_state=RANDOM_STATE
+)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+print('Training shape:', X_train_scaled.shape)
+print('Testing shape: ', X_test_scaled.shape)
+print('Training malignant rate:', round(y_train.mean(), 3))
+print('Testing malignant rate: ', round(y_test.mean(), 3))
+
+# ---- Cell 5 ----
+class LogisticRegressionScratch:
+    def __init__(self, learning_rate=0.05, epochs=2500):
+        self.learning_rate = learning_rate
+        self.epochs = epochs
+        self.weights = None
+        self.loss_history = []
+
+    def _add_intercept(self, X):
+        return np.c_[np.ones(X.shape[0]), X]
+
+    def fit(self, X, y):
+        Xb = self._add_intercept(X)
+        y = np.asarray(y).reshape(-1)
+        self.weights = np.zeros(Xb.shape[1])
+        for _ in range(self.epochs):
+            probabilities = sigmoid(Xb @ self.weights)
+            probabilities = np.clip(probabilities, 1e-12, 1 - 1e-12)
+            loss = -np.mean(y * np.log(probabilities) + (1-y) * np.log(1-probabilities))
+            gradient = (Xb.T @ (probabilities - y)) / len(y)
+            self.weights -= self.learning_rate * gradient
+            self.loss_history.append(loss)
+        return self
+
+    def predict_proba(self, X):
+        Xb = self._add_intercept(X)
+        p1 = sigmoid(Xb @ self.weights)
+        return np.c_[1-p1, p1]
+
+    def predict(self, X, threshold=0.5):
+        return (self.predict_proba(X)[:, 1] >= threshold).astype(int)
+
+scratch_model = LogisticRegressionScratch(learning_rate=0.05, epochs=2500)
+scratch_model.fit(X_train_scaled, y_train)
+
+plt.figure(figsize=(8, 4))
+plt.plot(scratch_model.loss_history)
+plt.xlabel('Epoch')
+plt.ylabel('Binary cross-entropy loss')
+plt.title('Training loss from scratch')
+plt.show()
+
+# ---- Cell 6 ----
+def show_metrics(y_true, y_pred, y_score, title='Model evaluation'):
+    results = {
+        'Accuracy': accuracy_score(y_true, y_pred),
+        'Precision': precision_score(y_true, y_pred, zero_division=0),
+        'Recall': recall_score(y_true, y_pred, zero_division=0),
+        'F1-score': f1_score(y_true, y_pred, zero_division=0),
+        'ROC-AUC': roc_auc_score(y_true, y_score),
+    }
+    display(pd.DataFrame(results, index=[title]).round(4))
+    print(classification_report(y_true, y_pred, target_names=['benign (0)', 'malignant (1)'], zero_division=0))
+    return results
+
+scratch_scores = scratch_model.predict_proba(X_test_scaled)[:, 1]
+scratch_predictions = scratch_model.predict(X_test_scaled)
+scratch_metrics = show_metrics(y_test, scratch_predictions, scratch_scores, 'From-scratch model')
+
+# ---- Cell 7 ----
+cm = confusion_matrix(y_test, scratch_predictions)
+plt.figure(figsize=(5, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False,
+            xticklabels=['Predicted benign', 'Predicted malignant'],
+            yticklabels=['Actual benign', 'Actual malignant'])
+plt.title('Confusion matrix')
+plt.xlabel('Prediction')
+plt.ylabel('Actual class')
+plt.show()
+
+tn, fp, fn, tp = cm.ravel()
+print(f'TN={tn}, FP={fp}, FN={fn}, TP={tp}')
+
+# ---- Cell 8 ----
+sklearn_model = LogisticRegression(C=1.0, max_iter=2000, random_state=RANDOM_STATE)
+sklearn_model.fit(X_train_scaled, y_train)
+
+sklearn_scores = sklearn_model.predict_proba(X_test_scaled)[:, 1]
+sklearn_predictions = sklearn_model.predict(X_test_scaled)
+sklearn_metrics = show_metrics(y_test, sklearn_predictions, sklearn_scores, 'scikit-learn model')
+
+# ---- Cell 9 ----
+coef_table = pd.DataFrame({
+    'feature': X.columns,
+    'coefficient': sklearn_model.coef_[0],
+    'odds_multiplier': np.exp(sklearn_model.coef_[0])
+}).sort_values('coefficient', key=np.abs, ascending=False)
+display(coef_table.head(10).round(4))
+print('Positive coefficients increase the log-odds of malignant (class 1).')
+
+# ---- Cell 10 ----
+fpr, tpr, thresholds = roc_curve(y_test, sklearn_scores)
+plt.figure(figsize=(7, 5))
+plt.plot(fpr, tpr, label=f'Logistic regression (AUC={roc_auc_score(y_test, sklearn_scores):.3f})')
+plt.plot([0, 1], [0, 1], '--', color='gray', label='Random classifier')
+plt.xlabel('False positive rate')
+plt.ylabel('True positive rate / recall')
+plt.title('ROC curve')
+plt.legend()
+plt.show()
+
+thresholds_to_compare = [0.30, 0.50, 0.70]
+threshold_rows = []
+for threshold in thresholds_to_compare:
+    pred = (sklearn_scores >= threshold).astype(int)
+    threshold_rows.append({
+        'threshold': threshold,
+        'precision': precision_score(y_test, pred, zero_division=0),
+        'recall': recall_score(y_test, pred, zero_division=0),
+        'f1': f1_score(y_test, pred, zero_division=0)
+    })
+display(pd.DataFrame(threshold_rows).round(4))
+
+
+######################################################################
+# EXPERIMENT 5: Decision Tree Classifier for Multiclass Classification
+######################################################################
+
+# ---- Cell 1 ----
+# Import libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+try:
+    from IPython.display import display
+except ImportError:
+    display = print
+
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+from sklearn.metrics import (accuracy_score, classification_report,
+                             confusion_matrix, ConfusionMatrixDisplay)
+
+RANDOM_STATE = 42
+sns.set_theme(style='whitegrid')
+
+# ---- Cell 2 ----
+iris = load_iris()
+X = pd.DataFrame(iris.data, columns=iris.feature_names)
+y = pd.Series(iris.target, name='target')
+target_names = iris.target_names
+
+data = X.copy()
+data['target'] = y
+data['class_name'] = y.map(dict(enumerate(target_names)))
+
+print('Feature matrix shape:', X.shape)
+print('Number of classes:', len(target_names))
+display(data.head())
+display(data.groupby('class_name').size().rename('count'))
+
+# ---- Cell 3 ----
+# Visualize two features and observe class separation
+plt.figure(figsize=(8, 5))
+sns.scatterplot(data=data, x='petal length (cm)', y='petal width (cm)',
+                hue='class_name', palette='Set1', s=80)
+plt.title('Iris samples using two features')
+plt.show()
+
+# ---- Cell 4 ----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=RANDOM_STATE, stratify=y
+)
+
+print('Training samples:', len(X_train))
+print('Testing samples :', len(X_test))
+
+# ---- Cell 5 ----
+tree_model = DecisionTreeClassifier(
+    criterion='gini',
+    max_depth=3,
+    random_state=RANDOM_STATE
+)
+tree_model.fit(X_train, y_train)
+
+y_pred = tree_model.predict(X_test)
+print('Test accuracy:', round(accuracy_score(y_test, y_pred), 4))
+
+# ---- Cell 6 ----
+# Visualize the learned tree
+plt.figure(figsize=(18, 9))
+plot_tree(tree_model, feature_names=iris.feature_names,
+          class_names=target_names, filled=True, rounded=True,
+          impurity=True, proportion=True)
+plt.title('Decision Tree for Multiclass Iris Classification')
+plt.show()
+
+# ---- Cell 7 ----
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_names)
+disp.plot(cmap='Blues', values_format='d')
+plt.title('Confusion Matrix')
+plt.show()
+
+# ---- Cell 8 ----
+# Inspect feature importance
+importance = pd.Series(tree_model.feature_importances_, index=iris.feature_names)
+importance = importance.sort_values(ascending=False)
+display(importance.to_frame('importance'))
+importance.plot(kind='bar', color='teal', figsize=(8, 4))
+plt.ylabel('Importance')
+plt.title('Feature Importance')
+plt.show()
+
+# ---- Cell 9 ----
+depths = range(1, 11)
+train_scores, test_scores = [], []
+
+for depth in depths:
+    model = DecisionTreeClassifier(max_depth=depth, random_state=RANDOM_STATE)
+    model.fit(X_train, y_train)
+    train_scores.append(model.score(X_train, y_train))
+    test_scores.append(model.score(X_test, y_test))
+
+plt.figure(figsize=(8, 5))
+plt.plot(depths, train_scores, marker='o', label='Training accuracy')
+plt.plot(depths, test_scores, marker='s', label='Testing accuracy')
+plt.xlabel('Maximum tree depth')
+plt.ylabel('Accuracy')
+plt.xticks(list(depths))
+plt.legend()
+plt.title('Effect of Tree Depth')
+plt.show()
+
+# ---- Cell 10 ----
+parameter_grid = {
+    'criterion': ['gini', 'entropy'],
+    'max_depth': [2, 3, 4, 5, None],
+    'min_samples_split': [2, 4, 6]
+}
+
+grid = GridSearchCV(
+    DecisionTreeClassifier(random_state=RANDOM_STATE),
+    parameter_grid, cv=5, scoring='accuracy', n_jobs=-1
+)
+grid.fit(X_train, y_train)
+
+print('Best parameters:', grid.best_params_)
+print('Best cross-validation accuracy:', round(grid.best_score_, 4))
+tuned_pred = grid.predict(X_test)
+print('Tuned model test accuracy:', round(accuracy_score(y_test, tuned_pred), 4))
+
+# ---- Cell 11 ----
+new_sample = pd.DataFrame([[5.8, 2.8, 4.8, 1.4]], columns=iris.feature_names)
+predicted_id = grid.predict(new_sample)[0]
+predicted_probabilities = grid.predict_proba(new_sample)[0]
+
+print('Predicted class:', target_names[predicted_id])
+print('Class probabilities:')
+display(pd.Series(predicted_probabilities, index=target_names).round(4))
+
+
+######################################################################
+# EXPERIMENT 6: Support Vector Machine (SVM) for Classification
+######################################################################
+
+# ---- Cell 1 ----
+# Import libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import make_moons, make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.svm import SVC
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    classification_report, confusion_matrix
+)
+
+RANDOM_STATE = 42
+sns.set_theme(style="whitegrid")
+print("Imports complete.")
+
+# ---- Cell 2 ----
+X_binary, y_binary = make_moons(n_samples=600, noise=0.25, random_state=RANDOM_STATE)
+Xb_train, Xb_test, yb_train, yb_test = train_test_split(
+    X_binary, y_binary, test_size=0.25, random_state=RANDOM_STATE, stratify=y_binary
+)
+
+plt.figure(figsize=(6, 5))
+plt.scatter(X_binary[:, 0], X_binary[:, 1], c=y_binary, cmap="coolwarm", s=22, edgecolor="k", linewidth=0.25)
+plt.title("Binary dataset: two moons")
+plt.xlabel("Feature 1"); plt.ylabel("Feature 2")
+plt.show()
+print("Train size:", len(yb_train), "| Test size:", len(yb_test))
+
+# ---- Cell 3 ----
+binary_models = {
+    "Linear": SVC(kernel="linear", C=1.0),
+    "Polynomial (degree 3)": SVC(kernel="poly", degree=3, C=1.0, gamma="scale"),
+    "RBF": SVC(kernel="rbf", C=1.0, gamma="scale"),
+}
+
+binary_rows = []
+for name, estimator in binary_models.items():
+    model = make_pipeline(StandardScaler(), estimator)
+    model.fit(Xb_train, yb_train)
+    pred = model.predict(Xb_test)
+    binary_rows.append({
+        "Kernel": name,
+        "Accuracy": accuracy_score(yb_test, pred),
+        "Precision (macro)": precision_score(yb_test, pred, average="macro", zero_division=0),
+        "Recall (macro)": recall_score(yb_test, pred, average="macro", zero_division=0),
+        "F1 (macro)": f1_score(yb_test, pred, average="macro", zero_division=0),
+        "model": model,
+        "pred": pred,
+    })
+
+binary_results = pd.DataFrame([{k:v for k,v in row.items() if k not in ("model", "pred")} for row in binary_rows])
+display(binary_results.sort_values("F1 (macro)", ascending=False).round(3))
+
+# ---- Cell 4 ----
+# Visualize each model's decision regions. The displayed axes use standardized coordinates.
+def plot_decision_regions(ax, model, X, y, title):
+    scaler = model.named_steps["standardscaler"]
+    svc = model.named_steps["svc"]
+    X_scaled = scaler.transform(X)
+    pad = 0.6
+    x0_min, x0_max = X_scaled[:, 0].min() - pad, X_scaled[:, 0].max() + pad
+    x1_min, x1_max = X_scaled[:, 1].min() - pad, X_scaled[:, 1].max() + pad
+    xx, yy = np.meshgrid(np.linspace(x0_min, x0_max, 250), np.linspace(x1_min, x1_max, 250))
+    grid = np.c_[xx.ravel(), yy.ravel()]
+    zz = svc.predict(grid).reshape(xx.shape)
+    ax.contourf(xx, yy, zz, alpha=0.22, cmap="coolwarm")
+    ax.scatter(X_scaled[:, 0], X_scaled[:, 1], c=y, cmap="coolwarm", s=18, edgecolor="k", linewidth=0.2)
+    # Mark support vectors in standardized coordinates
+    sv = svc.support_vectors_
+    ax.scatter(sv[:, 0], sv[:, 1], s=75, facecolors="none", edgecolors="black", linewidths=1.0, label="Support vectors")
+    ax.set_title(title); ax.set_xlabel("Standardized feature 1"); ax.set_ylabel("Standardized feature 2")
+    ax.legend(loc="best", fontsize=8)
+
+fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+for ax, row in zip(axes, binary_rows):
+    plot_decision_regions(ax, row["model"], Xb_train, yb_train, row["Kernel"])
+plt.tight_layout(); plt.show()
+
+# ---- Cell 5 ----
+X_multi, y_multi = make_classification(
+    n_samples=900, n_features=2, n_redundant=0, n_informative=2,
+    n_clusters_per_class=1, n_classes=3, class_sep=1.35,
+    random_state=RANDOM_STATE
+)
+Xm_train, Xm_test, ym_train, ym_test = train_test_split(
+    X_multi, y_multi, test_size=0.25, random_state=RANDOM_STATE, stratify=y_multi
+)
+
+multi_model = make_pipeline(StandardScaler(), SVC(kernel="rbf", C=1.0, gamma="scale"))
+multi_model.fit(Xm_train, ym_train)
+ym_pred = multi_model.predict(Xm_test)
+
+print("Multiclass classification report")
+print(classification_report(ym_test, ym_pred, digits=3, zero_division=0))
+cm = confusion_matrix(ym_test, ym_pred)
+plt.figure(figsize=(5, 4))
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", cbar=False,
+            xticklabels=np.unique(y_multi), yticklabels=np.unique(y_multi))
+plt.xlabel("Predicted class"); plt.ylabel("True class"); plt.title("Multiclass RBF SVM confusion matrix")
+plt.show()
+
+# ---- Cell 6 ----
+tuning_rows = []
+for C in [0.1, 1, 10]:
+    for gamma in [0.1, 1, 10]:
+        model = make_pipeline(StandardScaler(), SVC(kernel="rbf", C=C, gamma=gamma))
+        model.fit(Xb_train, yb_train)
+        pred = model.predict(Xb_test)
+        tuning_rows.append({"C": C, "gamma": gamma, "Accuracy": accuracy_score(yb_test, pred),
+                           "F1 (macro)": f1_score(yb_test, pred, average="macro")})
+tuning_results = pd.DataFrame(tuning_rows).sort_values("F1 (macro)", ascending=False)
+display(tuning_results.round(3))
+
+
+######################################################################
+# EXPERIMENT 7: Ensemble Learning with Random Forests
+######################################################################
+
+# ---- Cell 1 ----
+# Import libraries
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import make_classification, make_regression
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
+                             classification_report, confusion_matrix,
+                             mean_absolute_error, mean_squared_error, r2_score)
+
+RANDOM_STATE = 42
+sns.set_theme(style='whitegrid')
+print('Imports complete.')
+
+# ---- Cell 2 ----
+X, y = make_classification(
+    n_samples=1200, n_features=12, n_informative=6, n_redundant=2,
+    n_classes=2, class_sep=1.0, flip_y=0.04, random_state=RANDOM_STATE
+)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, stratify=y, random_state=RANDOM_STATE
+)
+print('Training samples:', len(y_train), '| Test samples:', len(y_test))
+print('Class counts in full dataset:', np.bincount(y))
+
+# ---- Cell 3 ----
+# Compare a single decision tree with Random Forest models
+models = {
+    'Decision Tree': DecisionTreeClassifier(random_state=RANDOM_STATE),
+    'Random Forest (10 trees)': RandomForestClassifier(n_estimators=10, random_state=RANDOM_STATE, n_jobs=-1),
+    'Random Forest (100 trees)': RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE, n_jobs=-1),
+    'Random Forest (300 trees)': RandomForestClassifier(n_estimators=300, random_state=RANDOM_STATE, n_jobs=-1),
+}
+results = []
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    pred = model.predict(X_test)
+    results.append({
+        'Model': name,
+        'Train accuracy': model.score(X_train, y_train),
+        'Test accuracy': accuracy_score(y_test, pred),
+        'Precision': precision_score(y_test, pred, zero_division=0),
+        'Recall': recall_score(y_test, pred, zero_division=0),
+        'F1-score': f1_score(y_test, pred, zero_division=0),
+    })
+results_df = pd.DataFrame(results)
+display(results_df.round(3))
+
+# ---- Cell 4 ----
+rf_classifier = models['Random Forest (100 trees)']
+y_pred = rf_classifier.predict(X_test)
+print(classification_report(y_test, y_pred, digits=3, zero_division=0))
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(5, 4))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.xlabel('Predicted class'); plt.ylabel('True class')
+plt.title('Random Forest confusion matrix')
+plt.show()
+
+# ---- Cell 5 ----
+importance = pd.Series(rf_classifier.feature_importances_, index=[f'Feature {i+1}' for i in range(X.shape[1])])
+importance = importance.sort_values(ascending=False)
+display(importance.rename('Importance').to_frame().round(4))
+plt.figure(figsize=(8, 4))
+importance.sort_values().plot(kind='barh', color='teal')
+plt.xlabel('Impurity-based importance'); plt.title('Random Forest feature importance')
+plt.tight_layout(); plt.show()
+
+# ---- Cell 6 ----
+cv_models = {
+    'Decision Tree': DecisionTreeClassifier(random_state=RANDOM_STATE),
+    'Random Forest': RandomForestClassifier(n_estimators=100, random_state=RANDOM_STATE, n_jobs=-1),
+}
+cv_rows = []
+for name, model in cv_models.items():
+    scores = cross_val_score(model, X_train, y_train, cv=5, scoring='accuracy', n_jobs=-1)
+    cv_rows.append({'Model': name, 'Fold accuracies': np.round(scores, 3),
+                    'Mean CV accuracy': scores.mean(), 'Std. deviation': scores.std()})
+for row in cv_rows:
+    print(row['Model'], '| folds:', row['Fold accuracies'],
+          '| mean:', round(row['Mean CV accuracy'], 3),
+          '| std:', round(row['Std. deviation'], 3))
+
+# ---- Cell 7 ----
+X_reg, y_reg = make_regression(
+    n_samples=1000, n_features=10, n_informative=6, noise=18, random_state=RANDOM_STATE
+)
+Xr_train, Xr_test, yr_train, yr_test = train_test_split(
+    X_reg, y_reg, test_size=0.25, random_state=RANDOM_STATE
+)
+reg_models = {
+    'Shallow forest (max_depth=4)': RandomForestRegressor(n_estimators=150, max_depth=4, random_state=RANDOM_STATE, n_jobs=-1),
+    'Unrestricted forest': RandomForestRegressor(n_estimators=150, random_state=RANDOM_STATE, n_jobs=-1),
+}
+reg_rows = []
+for name, model in reg_models.items():
+    model.fit(Xr_train, yr_train)
+    pred = model.predict(Xr_test)
+    reg_rows.append({'Model': name, 'MAE': mean_absolute_error(yr_test, pred),
+                     'RMSE': np.sqrt(mean_squared_error(yr_test, pred)),
+                     'R²': r2_score(yr_test, pred)})
+display(pd.DataFrame(reg_rows).round(3))
+
+
+######################################################################
+# EXPERIMENT 8: Evaluation Metrics for Classification Models
+######################################################################
+
+# ---- Cell 1 ----
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score, precision_score, recall_score, f1_score,
+    confusion_matrix, classification_report, roc_auc_score,
+    roc_curve
+)
+
+RANDOM_STATE = 42
+
+# ---- Cell 2 ----
+data = load_breast_cancer()
+X = pd.DataFrame(data.data, columns=data.feature_names)
+# Convert target to 1 for malignant (positive class), 0 for benign.
+y = (data.target == 0).astype(int)
+
+print(f"Number of samples: {X.shape[0]}")
+print(f"Number of features: {X.shape[1]}")
+print("Class counts (0 = benign, 1 = malignant):")
+# Fix: y is a NumPy array, so wrap it in a pandas Series first
+print(pd.Series(y).value_counts().sort_index())
+X.head()
+
+# ---- Cell 3 ----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=RANDOM_STATE, stratify=y
+)
+print("Training samples:", len(X_train))
+print("Test samples:", len(X_test))
+
+# ---- Cell 4 ----
+model = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=5000, random_state=RANDOM_STATE)
+)
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+y_prob = model.predict_proba(X_test)[:, 1]
+print("Model training complete.")
+
+# ---- Cell 5 ----
+cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
+tn, fp, fn, tp = cm.ravel()
+print(f"TN = {tn}, FP = {fp}, FN = {fn}, TP = {tp}")
+
+plt.figure(figsize=(6, 5))
+sns.heatmap(
+    cm, annot=True, fmt="d", cmap="Blues",
+    xticklabels=["Benign (0)", "Malignant (1)"],
+    yticklabels=["Benign (0)", "Malignant (1)"]
+)
+plt.xlabel("Predicted label")
+plt.ylabel("True label")
+plt.title("Confusion Matrix")
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 6 ----
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred, zero_division=0)
+recall = recall_score(y_test, y_pred, zero_division=0)
+f1 = f1_score(y_test, y_pred, zero_division=0)
+specificity = tn / (tn + fp) if (tn + fp) else 0.0
+roc_auc = roc_auc_score(y_test, y_prob)
+
+metrics = pd.DataFrame({
+    "Metric": ["Accuracy", "Precision", "Recall / Sensitivity", "Specificity", "F1-score", "ROC-AUC"],
+    "Value": [accuracy, precision, recall, specificity, f1, roc_auc]
+})
+metrics.style.format({"Value": "{:.4f}"})
+
+# ---- Cell 7 ----
+print(classification_report(
+    y_test, y_pred,
+    labels=[0, 1],
+    target_names=["Benign", "Malignant"],
+    zero_division=0,
+    digits=4
+))
+
+# ---- Cell 8 ----
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+plt.figure(figsize=(7, 5))
+plt.plot(fpr, tpr, label=f"Logistic Regression (AUC = {roc_auc:.3f})")
+plt.plot([0, 1], [0, 1], "--", color="gray", label="Random classifier")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate (Recall)")
+plt.title("ROC Curve")
+plt.legend(loc="lower right")
+plt.grid(alpha=0.25)
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 9 ----
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+threshold_rows = []
+for threshold in [0.30, 0.50, 0.70]:
+    pred_at_threshold = (y_prob >= threshold).astype(int)
+    tn_t, fp_t, fn_t, tp_t = confusion_matrix(y_test, pred_at_threshold, labels=[0, 1]).ravel()
+    threshold_rows.append({
+        "Threshold": threshold,
+        "Precision": precision_score(y_test, pred_at_threshold, zero_division=0),
+        "Recall": recall_score(y_test, pred_at_threshold, zero_division=0),
+        "Specificity": tn_t / (tn_t + fp_t) if (tn_t + fp_t) else 0.0,
+        "F1-score": f1_score(y_test, pred_at_threshold, zero_division=0),
+        "False positives": fp_t,
+        "False negatives": fn_t
+    })
+threshold_results = pd.DataFrame(threshold_rows)
+threshold_results.style.format({
+    "Threshold": "{:.2f}", "Precision": "{:.3f}", "Recall": "{:.3f}",
+    "Specificity": "{:.3f}", "F1-score": "{:.3f}"
+})
+
+
+######################################################################
+# EXPERIMENT 9: Model Selection Techniques
+######################################################################
+
+# ---- Cell 1 ----
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+import pandas as pd
+
+# ---- Cell 2 ----
+iris = load_iris()
+X, y = iris.data, iris.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
+
+print("Training examples:", X_train.shape[0])
+print("Test examples:", X_test.shape[0])
+print("Features:", iris.feature_names)
+print("Classes:", list(iris.target_names))
+
+# ---- Cell 3 ----
+pipeline = Pipeline([
+    ("scale", StandardScaler()),
+    ("classifier", LogisticRegression(max_iter=1000))
+])
+
+param_grid = [
+    {
+        "classifier": [LogisticRegression(max_iter=1000)],
+        "classifier__C": [0.1, 1, 10]
+    },
+    {
+        "classifier": [SVC()],
+        "classifier__C": [0.1, 1, 10],
+        "classifier__kernel": ["linear", "rbf"]
+    },
+    {
+        "classifier": [RandomForestClassifier(random_state=42)],
+        "classifier__n_estimators": [100, 200],
+        "classifier__max_depth": [None, 3, 5]
+    }
+]
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+search = GridSearchCV(
+    estimator=pipeline,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=cv,
+    n_jobs=-1,
+    return_train_score=True
+)
+
+# ---- Cell 4 ----
+search.fit(X_train, y_train)
+
+print("Best classifier:", search.best_estimator_.named_steps["classifier"])
+print("Best parameters:", search.best_params_)
+print(f"Best mean cross-validation accuracy: {search.best_score_:.3f}")
+
+# ---- Cell 5 ----
+results = pd.DataFrame(search.cv_results_)
+results[["mean_test_score", "std_test_score", "mean_train_score", "params"]].sort_values(
+    by="mean_test_score", ascending=False
+).head(10).reset_index(drop=True)
+
+# ---- Cell 6 ----
+y_pred = search.predict(X_test)
+print(f"Test accuracy: {accuracy_score(y_test, y_pred):.3f}")
+print("\nClassification report:")
+print(classification_report(y_test, y_pred, target_names=iris.target_names))
+
+
+######################################################################
+# EXPERIMENT 10: Hyperparameter Tuning and Optimization
+######################################################################
+
+# ---- Cell 1 ----
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, StratifiedKFold
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
+from scipy.stats import loguniform
+
+RANDOM_STATE = 42
+
+cancer = load_breast_cancer(as_frame=True)
+X = cancer.data
+y = cancer.target
+
+print("Feature matrix:", X.shape)
+print("Class names:", list(cancer.target_names))
+print("Class counts:")
+print(y.value_counts().rename(index=dict(enumerate(cancer.target_names))))
+X.head()
+
+# ---- Cell 2 ----
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, random_state=RANDOM_STATE, stratify=y
+)
+print(f"Training samples: {len(X_train)}")
+print(f"Test samples: {len(X_test)}")
+
+# ---- Cell 3 ----
+baseline = Pipeline([
+    ("scaler", StandardScaler()),
+    ("svc", SVC())
+])
+baseline.fit(X_train, y_train)
+baseline_pred = baseline.predict(X_test)
+
+def metric_row(name, y_true, y_pred):
+    return {
+        "Model": name,
+        "Accuracy": accuracy_score(y_true, y_pred),
+        "Precision": precision_score(y_true, y_pred),
+        "Recall": recall_score(y_true, y_pred),
+        "F1": f1_score(y_true, y_pred),
+    }
+
+results = [metric_row("Baseline SVC", y_test, baseline_pred)]
+pd.DataFrame(results).set_index("Model").round(4)
+
+# ---- Cell 4 ----
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+grid_params = {
+    "svc__C": [0.1, 1, 10, 100],
+    "svc__gamma": ["scale", 0.001, 0.01, 0.1],
+    "svc__kernel": ["rbf", "linear"]
+}
+
+grid_search = GridSearchCV(
+    estimator=Pipeline([("scaler", StandardScaler()), ("svc", SVC())]),
+    param_grid=grid_params,
+    scoring="f1",
+    cv=cv,
+    n_jobs=-1,
+    refit=True,
+    return_train_score=True
+)
+grid_search.fit(X_train, y_train)
+print("Best CV F1:", round(grid_search.best_score_, 4))
+print("Best parameters:", grid_search.best_params_)
+
+# ---- Cell 5 ----
+random_params = {
+    "svc__C": loguniform(1e-2, 1e3),
+    "svc__gamma": loguniform(1e-5, 1e0),
+    "svc__kernel": ["rbf", "linear"]
+}
+
+random_search = RandomizedSearchCV(
+    estimator=Pipeline([("scaler", StandardScaler()), ("svc", SVC())]),
+    param_distributions=random_params,
+    n_iter=30,
+    scoring="f1",
+    cv=cv,
+    n_jobs=-1,
+    random_state=RANDOM_STATE,
+    refit=True,
+    return_train_score=True
+)
+random_search.fit(X_train, y_train)
+print("Best CV F1:", round(random_search.best_score_, 4))
+print("Best parameters:", random_search.best_params_)
+
+# ---- Cell 6 ----
+grid_pred = grid_search.predict(X_test)
+random_pred = random_search.predict(X_test)
+
+results = [
+    metric_row("Baseline SVC", y_test, baseline_pred),
+    metric_row("GridSearchCV SVC", y_test, grid_pred),
+    metric_row("RandomizedSearchCV SVC", y_test, random_pred),
+]
+comparison = pd.DataFrame(results).set_index("Model")
+comparison.round(4)
+
+# ---- Cell 7 ----
+ax = comparison[["Accuracy", "Precision", "Recall", "F1"]].plot(
+    kind="bar", figsize=(10, 5), ylim=(0.85, 1.0), rot=0
+)
+ax.set_ylabel("Test-set score")
+ax.set_title("Baseline and tuned SVC performance")
+ax.grid(axis="y", alpha=0.3)
+plt.legend(loc="lower right")
+plt.tight_layout()
+plt.show()
+
+# ---- Cell 8 ----
+best_model = grid_search.best_estimator_
+best_pred = best_model.predict(X_test)
+
+print("Classification report (GridSearchCV model):")
+print(classification_report(y_test, best_pred, target_names=cancer.target_names))
+print("Confusion matrix:")
+print(confusion_matrix(y_test, best_pred))
+
+# ---- Cell 9 ----
+cv_results = pd.DataFrame(grid_search.cv_results_)
+cols = ["rank_test_score", "mean_test_score", "std_test_score", "mean_train_score", "param_svc__C", "param_svc__gamma", "param_svc__kernel"]
+cv_results[cols].sort_values("rank_test_score").head(10).reset_index(drop=True).round(4)

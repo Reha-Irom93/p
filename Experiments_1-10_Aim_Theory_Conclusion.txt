@@ -1,0 +1,513 @@
+AIM, TITLE, OBJECTIVES, REQUIREMENTS, THEORY AND CONCLUSION - EXPERIMENTS 1 TO 10
+======================================================================
+
+
+======================================================================
+EXPERIMENT 1
+======================================================================
+
+TITLE
+  - Introduction to Scikit-learn for Supervised Learning
+
+AIM
+  - To gain hands-on experience in implementing supervised learning algorithms using the Scikit-learn library in Python, by building a complete classification workflow on the Iris dataset: loading and inspecting data, splitting it, building preprocessing-and-model pipelines, training and comparing classifiers, cross-validating, tuning hyperparameters and predicting unseen samples.
+
+OBJECTIVES
+  - Load and inspect a dataset (Iris)
+  - Split data into training and testing sets (stratified)
+  - Build preprocessing-and-model pipelines
+  - Train and compare classifiers (Logistic Regression, KNN, Decision Tree, SVM)
+  - Evaluate with accuracy, precision, recall, F1 and confusion matrix
+  - Estimate generalization with 5-fold cross-validation
+  - Tune KNN hyperparameters with GridSearchCV
+  - Predict the class of unseen samples
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn
+  - Dataset: Iris dataset (150 samples, 4 features, 3 classes)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  SUPERVISED LEARNING:
+    - Supervised learning learns a relationship between input features X and a known target y from labelled examples, and then predicts the target for new, unseen examples.
+  STANDARD WORKFLOW:
+    - Load and understand the data, then separate the features X and the target y.
+    - Split the data into a training set and a test set.
+    - Preprocess the features when required, train the model with fit(), predict with predict().
+    - Evaluate on unseen test data and tune the model using cross-validation.
+  TRAIN/TEST SPLIT AND STRATIFICATION:
+    - The model learns from the training set (80%) and is evaluated on an untouched test set (20%).
+  FEATURE SCALING AND PIPELINES:
+    - Distance- and margin-based algorithms depend on the magnitude of the features, so features are standardized:.
+      Formula: z = (x − μ) / σ
+    - A Pipeline chains the scaler and the model so that the scaling parameters are learned only from the training data; this prevents data leakage.
+  ALGORITHMS COMPARED:
+    - Logistic Regression: a linear probabilistic classifier that converts a linear score into class probabilities.
+    - K-Nearest Neighbours (KNN): assigns the majority class among the k nearest training points.
+    - Decision Tree: learns interpretable if-then rules by choosing splits that reduce the Gini impurity, Gini = 1 − Σ pₖ².
+    - Support Vector Machine (SVM): finds the boundary with the maximum margin; the RBF kernel allows nonlinear boundaries.
+  EVALUATION METRICS:
+      Formula: Accuracy = correct predictions / all predictions
+      Formula: Precision = TP / (TP + FP)        Recall = TP / (TP + FN)
+      Formula: F1-score = 2 × Precision × Recall / (Precision + Recall)
+    - The confusion matrix shows, for each actual class, how the samples were predicted.
+  CROSS-VALIDATION AND HYPERPARAMETER TUNING:
+    - A single split can give a result that depends on which samples entered the test set.
+
+CONCLUSION
+  - In this experiment a complete supervised-learning classification workflow was implemented with Scikit-learn on the Iris dataset (120 training and 30 test samples).
+  - On the test set Decision Tree (depth 3) and SVM (RBF) both reached an accuracy of 0.9667, while Logistic Regression and KNN reached 0.9333.
+  - Five-fold cross-validation gave mean accuracies of 0.9667 for KNN and SVM, 0.9583 for Logistic Regression and 0.9333 for the Decision Tree, which shows that the ranking from a single split should be confirmed by cross-validation.
+  - Grid search selected KNN with n_neighbors = 5, p = 2 (Euclidean distance) and uniform weights (cross-validation accuracy 0.9667, test accuracy 0.9333).
+  - The tuned model classified three new flowers correctly as setosa, versicolor and virginica.
+  - Pipelines prevented preprocessing leakage, and the best model should be chosen using cross-validation together with test performance, interpretability and the needs of the application, not accuracy alone.
+
+
+======================================================================
+EXPERIMENT 2
+======================================================================
+
+TITLE
+  - Exploring Unsupervised Learning with K-Means Clustering
+
+AIM
+  - To explore the concepts of unsupervised learning and clustering using the K-Means algorithm: generating and exploring a customer dataset, standardizing its features, selecting a suitable number of clusters, training K-Means, evaluating and interpreting the clusters, and predicting the cluster of new observations.
+
+OBJECTIVES
+  - Explain unsupervised learning and clustering
+  - Describe the working of K-Means
+  - Standardize features before distance-based clustering
+  - Use the elbow method and silhouette score to select K
+  - Visualize and interpret clusters and centroids
+  - Assign new observations to learned clusters
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn (KMeans, StandardScaler, silhouette_score)
+  - Dataset: Synthetic customer dataset from make_blobs (320 samples: annual income, spending score)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  UNSUPERVISED LEARNING AND CLUSTERING:
+    - Unsupervised learning discovers structure in data without known target labels.
+  THE K-MEANS ALGORITHM:
+    - K-Means divides n observations into K non-overlapping clusters.
+    - Assignment step: assign every observation to its nearest centroid (Euclidean distance).
+    - Update step: replace every centroid by the mean of the observations assigned to it.
+    - The algorithm minimizes the within-cluster sum of squares (WCSS), also called inertia:.
+      Formula: J = Σₖ Σ(xᵢ ∈ Cₖ) ‖xᵢ − μₖ‖²
+    - where Cₖ is cluster k and μₖ is its centroid.
+  STANDARDIZATION:
+    - K-Means uses Euclidean distance, so a feature with a larger numerical scale can dominate the distance.
+  CHOOSING THE NUMBER OF CLUSTERS K:
+    - Elbow method: inertia always decreases as K increases; the elbow is the point where the improvement begins to slow down.
+    - Silhouette score: for each observation, s = (b − a) / max(a, b), where a is the mean distance to the other points in its own cluster and b is the mean distance to the nearest other cluster. It ranges from −1 to 1, and a higher value indicates better cohesion and separation; negative values suggest a point may belong to another cluster.
+    - A useful K should be supported by the metrics, by visual inspection, by stability and by practical meaning.
+  INTERPRETATION AND PREDICTION:
+    - Centroids are learned in standardized space and are converted back to original units with the inverse transformation.
+  LIMITATIONS:
+    - K must be chosen in advance; K-Means is sensitive to feature scales and outliers, works best for compact, roughly spherical clusters of similar size, and different initializations can give different solutions.
+
+CONCLUSION
+  - In this experiment K-Means discovered customer groups without using any labelled outcome.
+  - Feature standardization ensured a fair distance calculation.
+  - For K = 2 to 10 the silhouette score was highest at K = 4 (0.7048) and the inertia curve showed its elbow at K = 4, so four clusters were used (final inertia 52.92).
+  - The four clusters contain 80 customers (25%) each and were interpreted from their centroids as: high-income low-spending (mean income 68.27, spending 30.12), high-income high-spending (71.72, 74.44), lower-income low-spending (27.15, 24.97) and lower-income high-spending (32.88, 78.35).
+  - The mean silhouette value of each cluster is between 0.64 and 0.75, which indicates well-separated clusters, and four new customers were assigned to the expected segments.
+  - The experiment shows that clustering involves not only fitting an algorithm but also preprocessing, selecting K, evaluating separation and interpreting the discovered structure.
+
+
+======================================================================
+EXPERIMENT 3
+======================================================================
+
+TITLE
+  - Implementing Linear Regression from Scratch
+
+AIM
+  - To gain a deeper understanding of linear regression by implementing it from scratch in Python, using only NumPy, with (1) the analytical least-squares solution and (2) gradient descent, and to evaluate the model with MAE, MSE, RMSE and R².
+
+OBJECTIVES
+  - Explain slope, intercept, residual and cost function
+  - Calculate regression parameters using least squares
+  - Train a model using gradient descent
+  - Evaluate with MAE, MSE, RMSE and R²
+  - Use the trained model to make predictions
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib
+  - Dataset: Synthetic study-hours vs exam-score data (30 samples, NumPy)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  SIMPLE LINEAR REGRESSION:
+    - For one input feature, linear regression assumes that the target is a linear function of the input:.
+      Formula: ŷ = b₀ + b₁x
+    - where b₀ is the intercept (the predicted value at x = 0) and b₁ is the slope (the average change in y for a one-unit increase in x).
+  ANALYTICAL LEAST-SQUARES SOLUTION:
+    - The parameters that minimize the sum of squared residuals are obtained directly from the data:.
+      Formula: b₁ = Σ (xᵢ − x̄)(yᵢ − ȳ) / Σ (xᵢ − x̄)²          b₀ = ȳ − b₁ x̄
+  COST FUNCTION AND GRADIENT DESCENT:
+    - Gradient descent minimizes the mean squared error (MSE):.
+      Formula: J(b₀, b₁) = (1/n) Σ (yᵢ − ŷᵢ)²
+    - Starting from b₀ = b₁ = 0, the parameters are updated repeatedly in the direction opposite to the gradient:.
+      Formula: b₀ ← b₀ − α · (−2/n) Σ (yᵢ − ŷᵢ)
+      Formula: b₁ ← b₁ − α · (−2/n) Σ xᵢ (yᵢ − ŷᵢ)
+    - where α is the learning rate.
+  EVALUATION METRICS:
+      Formula: MAE = (1/n) Σ |yᵢ − ŷᵢ|          MSE = (1/n) Σ (yᵢ − ŷᵢ)²
+      Formula: RMSE = √MSE          R² = 1 − SS_res / SS_tot
+    - MAE and RMSE are in the units of the target, and RMSE penalizes large errors more.
+  RESIDUAL ANALYSIS AND PREDICTION:
+    - A residual plot should show points scattered randomly around zero, and an actual-versus-predicted plot should lie close to the ideal diagonal.
+
+CONCLUSION
+  - Simple linear regression was implemented from scratch with the analytical least-squares formulas and with gradient descent (learning rate 0.01, 3000 iterations) on 30 observations of study hours and exam scores.
+  - Both methods gave practically the same model: analytical intercept 33.7384 and slope 5.7471, gradient descent intercept 33.7380 and slope 5.7471, so the fitted equation is Score = 33.74 + 5.75 × Study Hours (the data were generated with 32 + 6.2 × hours plus noise).
+  - The model has MAE = 2.7215, MSE = 11.0481, RMSE = 3.3239 and R² = 0.9557, i.e. about 95.6% of the variation in scores is explained by study hours.
+  - The cost curve decreased steadily and converged, and the residuals were scattered around zero.
+  - For 7.5 study hours the model predicts a score of 76.84.
+  - The experiment shows that the analytical and the iterative solution agree, but that the result describes association, not causation.
+
+
+======================================================================
+EXPERIMENT 4
+======================================================================
+
+TITLE
+  - Binary Classification with Logistic Regression
+
+AIM
+  - To implement logistic regression for binary classification, understand its mathematical foundation, and apply it to a real-world medical diagnosis problem (breast-cancer diagnosis), including training from scratch with gradient descent, using scikit-learn, evaluating with several metrics and adjusting the decision threshold.
+
+OBJECTIVES
+  - Explain why logistic regression suits binary classification
+  - Compute probabilities using the sigmoid function
+  - Train a model using gradient descent (from scratch)
+  - Evaluate with accuracy, precision, recall, F1, ROC-AUC and confusion matrix
+  - Interpret coefficients and adjust the classification threshold
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn
+  - Dataset: Breast Cancer Wisconsin dataset (569 samples, 30 features)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  BINARY CLASSIFICATION:
+    - Binary classification assigns each observation to one of two classes, such as disease or no disease, spam or not spam.
+      Formula: z = β₀ + β₁x₁ + β₂x₂ + … + β_p x_p
+      Formula: σ(z) = 1 / (1 + e^(−z)),   0 < σ(z) < 1
+    - The predicted class is 1 when P(y = 1 | x) ≥ 0.5 (the default threshold) and 0 otherwise.
+  LOSS FUNCTION AND GRADIENT DESCENT:
+    - The parameters are learned by minimizing the binary cross-entropy (log loss):.
+      Formula: J(β) = −(1/n) Σ [ yᵢ log(pᵢ) + (1 − yᵢ) log(1 − pᵢ) ]
+    - The gradient with respect to the weights is (1/n) Xᵀ(p − y), and gradient descent updates β ← β − η ∇J, where η is the learning rate.
+  SCIKIT-LEARN IMPLEMENTATION AND REGULARIZATION:
+    - In practice a tested library implementation is preferred because it provides regularization, solvers and convergence controls.
+  CONFUSION MATRIX AND METRICS:
+    - True positive (TP) and true negative (TN): correct predictions of the positive and negative class.
+    - False positive (FP): a benign sample flagged as malignant. False negative (FN): a malignant sample classified as benign.
+      Formula: Precision = TP / (TP + FP)        Recall = TP / (TP + FN)        F1 = 2PR / (P + R)
+    - Accuracy can be misleading when the classes are imbalanced.
+  THRESHOLD SELECTION:
+    - Lowering the threshold below 0.5 increases recall but also the number of false positives, and raising it does the opposite.
+
+CONCLUSION
+  - A logistic regression classifier was trained from scratch with gradient descent (learning rate 0.05, 2500 epochs) and with scikit-learn on the Breast Cancer Wisconsin dataset (569 samples, 30 features; 455 training and 114 test samples; malignant = positive class).
+  - The training loss decreased steadily and converged.
+  - On the test set the from-scratch model reached an accuracy of 0.9825, precision 1.0, recall 0.9524, F1-score 0.9756 and ROC-AUC 0.997 (TN = 72, FP = 0, FN = 2, TP = 40), and the scikit-learn model reached an accuracy of 0.9649, precision 0.975, recall 0.9286, F1-score 0.9512 and ROC-AUC 0.996, so both implementations perform very well.
+  - Changing the threshold showed the precision-recall trade-off: at 0.30 precision and recall were both 0.9762, at 0.50 they were 0.975 and 0.9286, and at 0.70 they were 1.0 and 0.9048.
+  - For a screening aid, a threshold below 0.5 improves sensitivity at a small cost in precision.
+  - Scaling the features, using appropriate metrics and choosing the threshold according to the application cost are essential steps.
+
+
+======================================================================
+EXPERIMENT 5
+======================================================================
+
+TITLE
+  - Decision Tree Classifier for Multiclass Classification
+
+AIM
+  - To understand the working of decision tree classifiers and their application in multiclass classification problems, by training a decision tree on the Iris dataset, visualizing and evaluating it, and studying how tree depth affects overfitting.
+
+OBJECTIVES
+  - Explain how a decision tree makes classification decisions
+  - Prepare a multiclass dataset
+  - Train a DecisionTreeClassifier
+  - Interpret accuracy, precision, recall, F1 and confusion matrix
+  - Visualize the tree and identify overfitting
+  - Tune hyperparameters with GridSearchCV and predict a new sample
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn
+  - Dataset: Iris dataset
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  DECISION TREE:
+    - A decision tree recursively divides the feature space using questions of the form xⱼ ≤ t.
+  SPLITTING CRITERIA:
+      Formula: Gini(S) = 1 − Σₖ pₖ²
+      Formula: Entropy(S) = − Σₖ pₖ log₂ pₖ
+    - where pₖ is the proportion of samples of class k in node S. A node with Gini = 0 is pure.
+  PREPROCESSING:
+    - Decision trees split on thresholds of single features, so they do not require feature scaling; the data is only split into a stratified training and testing set.
+  EVALUATION:
+    - The model is evaluated with accuracy, precision, recall, F1-score and the confusion matrix, which shows which classes are confused with each other.
+  UNDERFITTING AND OVERFITTING:
+    - A very shallow tree cannot represent a sufficiently complex boundary and underfits.
+  HYPERPARAMETER TUNING:
+    - GridSearchCV tries every combination of the given parameters (criterion, max_depth, min_samples_split) with five-fold cross-validation and keeps the best one.
+
+CONCLUSION
+  - A decision tree classifier (Gini criterion, max_depth = 3) was trained on the Iris dataset (112 training and 38 test samples) and reached a test accuracy of 0.8947.
+  - The tree classified setosa perfectly, while all four errors (4 of 38) occurred between versicolor and virginica, which overlap in feature space (versicolor recall 0.92, virginica recall 0.77).
+  - Feature importance showed that the model relies almost entirely on the petal measurements: petal length 0.9507, petal width 0.0493 and 0 for both sepal features.
+  - Increasing the depth raises the training accuracy to 1.0 without improving the test accuracy, which is a sign of overfitting, so the tree complexity must be controlled.
+  - Grid search with five-fold cross-validation selected criterion = gini, max_depth = 3 and min_samples_split = 2 (cross-validation accuracy 0.9375, test accuracy 0.8947), and a new sample (5.8, 2.8, 4.8, 1.4) was predicted as versicolor with probability 1.0.
+  - Decision trees are interpretable, need minimal preprocessing and support nonlinear boundaries, but unrestricted trees overfit.
+
+
+======================================================================
+EXPERIMENT 6
+======================================================================
+
+TITLE
+  - Support Vector Machine (SVM) for Classification
+
+AIM
+  - To implement SVM classifiers for binary and multiclass classification, compare the linear, polynomial and RBF kernels, and understand how the kernel trick enables nonlinear decision boundaries.
+
+OBJECTIVES
+  - Prepare data for SVM by splitting and standardizing
+  - Train and evaluate binary and multiclass SVM classifiers
+  - Compare linear, polynomial and RBF kernels
+  - Explain the kernel trick and the roles of C and gamma
+  - Interpret confusion matrices and classification metrics
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn (SVC)
+  - Dataset: Synthetic make_moons (600) and make_classification (900, 3 classes)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  MAXIMUM-MARGIN CLASSIFIER:
+    - A Support Vector Machine finds the separating boundary (hyperplane) that maximizes the margin, i.e. the distance to the nearest training points of each class.
+  SOFT MARGIN AND THE PARAMETER C:
+    - Real data is rarely perfectly separable, so a soft margin allows some training errors.
+  KERNEL TRICK:
+    - A linear SVM draws a straight boundary in the input space.
+      Formula: Linear:  K(x, x′) = x · x′
+      Formula: Polynomial:  K(x, x′) = (γ x · x′ + r)^d
+      Formula: RBF:  K(x, x′) = exp(−γ ‖x − x′‖²)
+    - The linear kernel gives a straight boundary, the polynomial kernel models feature interactions and curved boundaries, and the RBF kernel uses a similarity that decreases with distance and is a useful nonlinear baseline.
+  FEATURE SCALING:
+    - SVMs are based on distances, so they are sensitive to the scale of the features.
+  MULTICLASS CLASSIFICATION:
+    - SVC handles several classes with a one-versus-one strategy: a classifier is trained for each pair of classes and their votes are combined.
+  DATASETS AND EVALUATION:
+    - The two-moons dataset (make_moons) is not linearly separable and is used to compare the kernels; a three-class dataset (make_classification) is used for the multiclass case.
+
+CONCLUSION
+  - SVM classifiers were implemented for binary and multiclass problems.
+  - On the two-moons data (450 training and 150 test samples) the RBF kernel achieved the best test macro F1-score (0.927), compared with 0.866 for the linear kernel and 0.860 for the polynomial kernel (degree 3), because the moons cannot be separated by a straight line and the RBF kernel forms a flexible curved boundary.
+  - The decision-region plots showed that the support vectors lie close to the boundary and define it.
+  - For the three-class dataset an RBF SVM reached an accuracy and macro F1-score of 0.916 (225 test samples).
+  - The study of C and gamma showed that the settings strongly affect the result: the test accuracy ranged from 0.853 (C = 0.1, gamma = 0.1, too smooth) to 0.947 (for example C = 10, gamma = 1).
+  - Scaling is essential for SVMs, results depend on the generated sample and random seed, and for real data the hyperparameters should be tuned with cross-validation.
+
+
+======================================================================
+EXPERIMENT 7
+======================================================================
+
+TITLE
+  - Ensemble Learning with Random Forests
+
+AIM
+  - To implement Random Forest models and understand how combining decision trees can improve predictive performance and generalization, for both classification and regression.
+
+OBJECTIVES
+  - Explain ensemble learning, bootstrap sampling and random feature selection
+  - Train Random Forest classifiers and regressors
+  - Compare a Random Forest with a single decision tree
+  - Evaluate generalization using a held-out set and cross-validation
+  - Interpret feature importance and model complexity
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn (RandomForest)
+  - Dataset: Synthetic make_classification (1200) and make_regression (1000)
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  ENSEMBLE LEARNING:
+    - Ensemble learning combines the predictions of several models to obtain a more accurate and stable prediction than a single model.
+  RANDOM FOREST:
+    - A Random Forest builds many decision trees and makes them different in two ways:.
+    - Bootstrap sampling (bagging): each tree is trained on a random sample of the training data drawn with replacement, so about one third of the samples are left out of each tree (out-of-bag samples).
+    - Random feature selection: at every split each tree considers only a random subset of the features (max_features).
+    - For classification the trees vote and the majority class is predicted; for regression the predictions of the trees are averaged.
+  IMPORTANT HYPERPARAMETERS:
+    - n_estimators: the number of trees; more trees give a more stable model, but the improvement levels off while the computation time grows.
+    - max_depth: the maximum depth of each tree; limiting it reduces model complexity.
+    - max_features: the number of features considered at each split.
+  FEATURE IMPORTANCE:
+    - A Random Forest estimates the importance of a feature from the total impurity reduction it produces across all trees.
+  EVALUATION AND GENERALIZATION:
+    - Classification is evaluated with accuracy, precision, recall, F1-score and the confusion matrix, and regression with MAE, RMSE and R². A single train/test split gives only one estimate of performance, so five-fold cross-validation on the training data is also used; the mean score and its standard deviation show the performance and its stability, and the held-out test set stays separate.
+  ADVANTAGES AND LIMITATIONS:
+    - Random Forests are strong general-purpose models for structured data and are robust to overfitting compared with a single tree, but they are larger, slower and less interpretable than one tree.
+
+CONCLUSION
+  - Random Forest classification and regression were implemented and compared with a single decision tree.
+  - On the binary classification dataset (900 training and 300 test samples) the single decision tree reached a training accuracy of 1.0 but a test accuracy of only 0.810 (overfitting), while the Random Forests reached test accuracies of 0.847 (10 trees), 0.863 (100 trees) and 0.867 (300 trees), with F1-scores of 0.839, 0.865 and 0.868.
+  - Increasing the number of trees improved the result but the gain became very small after 100 trees.
+  - Five-fold cross-validation gave a mean accuracy of 0.898 for the forest against 0.817 for the single tree.
+  - Feature 11 (0.2164), Feature 12 (0.1484) and Feature 4 (0.1188) were the most important features.
+  - In the regression experiment the unrestricted forest (MAE 17.21, RMSE 22.40, R² 0.898) outperformed the shallow forest with max_depth = 4 (MAE 21.63, RMSE 27.52, R² 0.846).
+  - Random Forests reduce the reliance on a single tree and improve stability and generalization, at the cost of a larger and less interpretable model.
+
+
+======================================================================
+EXPERIMENT 8
+======================================================================
+
+TITLE
+  - Evaluation Metrics for Classification Models
+
+AIM
+  - To understand and implement common evaluation metrics for classification models using Python and Scikit-learn, by training a classifier on the Breast Cancer Wisconsin dataset, evaluating its predictions with several metrics and studying the effect of the decision threshold.
+
+OBJECTIVES
+  - Understand and compute the confusion matrix components (TP, TN, FP, FN)
+  - Calculate accuracy, precision, recall, specificity, F1-score and ROC-AUC
+  - Read a classification report and plot the ROC curve
+  - Study the effect of changing the probability threshold
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, Seaborn, Scikit-learn
+  - Dataset: Breast Cancer Wisconsin dataset
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  CONFUSION MATRIX:
+    - For a binary problem the confusion matrix counts the four possible outcomes.
+    - True positive (TP): a malignant sample correctly predicted as malignant. True negative (TN): a benign sample correctly predicted as benign.
+    - False positive (FP): a benign sample incorrectly predicted as malignant. False negative (FN): a malignant sample incorrectly predicted as benign.
+  CLASSIFICATION METRICS:
+      Formula: Accuracy = (TP + TN) / (TP + TN + FP + FN)
+      Formula: Precision = TP / (TP + FP)
+      Formula: Recall (sensitivity) = TP / (TP + FN)
+      Formula: Specificity = TN / (TN + FP)
+      Formula: F1-score = 2 × Precision × Recall / (Precision + Recall)
+    - Accuracy is the overall fraction of correct predictions and can be misleading when the classes are unequal.
+  ROC CURVE AND AUC:
+    - The ROC curve plots the true positive rate (recall) against the false positive rate (1 − specificity) as the decision threshold changes.
+  DECISION THRESHOLD:
+    - A probabilistic classifier predicts the positive class when its probability is at least the threshold, by default 0.5. Lowering the threshold increases recall but also the false positives; raising it reduces false positives but increases false negatives.
+  MODEL AND DATA PREPARATION:
+    - A Logistic Regression model with a StandardScaler in a pipeline is used, so the scaler is fitted only on the training data.
+
+CONCLUSION
+  - A Logistic Regression classifier was trained on the Breast Cancer Wisconsin dataset (426 training and 143 test samples, malignant as the positive class) and evaluated with several metrics.
+  - The confusion matrix was TN = 89, FP = 1, FN = 4, TP = 49.
+  - The model reached an accuracy of 0.9650, precision 0.9800, recall 0.9245, specificity 0.9889, F1-score 0.9515 and ROC-AUC 0.9962, so it separates the two classes very well.
+  - The threshold analysis showed the trade-off: at a threshold of 0.30 the recall rose to 0.962 (FN = 2) with precision 0.981 (FP = 1); at 0.50 the recall was 0.925 (FN = 4); at 0.70 the precision was 1.0 (FP = 0) but the recall fell to 0.906 (FN = 5).
+  - When missing a malignant case is costly, recall is the most important metric and a threshold below 0.5 may be chosen, accepting more false positives.
+  - Accuracy alone can be misleading, so precision, recall, specificity, F1-score, ROC-AUC and the confusion matrix should be reported together.
+
+
+======================================================================
+EXPERIMENT 9
+======================================================================
+
+TITLE
+  - Model Selection Techniques
+
+AIM
+  - To explore and apply model selection techniques for choosing a suitable machine learning model using Python and Scikit-learn, by comparing Logistic Regression, Support Vector Classifier (SVC) and Random Forest on the Iris dataset with stratified cross-validation and GridSearchCV, and evaluating the selected model once on a held-out test set.
+
+OBJECTIVES
+  - Compare candidate classifiers using stratified cross-validation
+  - Select model hyperparameters with GridSearchCV
+  - Evaluate the selected model once on a held-out test set
+  - Keep preprocessing inside a pipeline to avoid data leakage
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: pandas, Scikit-learn (GridSearchCV, StratifiedKFold, Pipeline)
+  - Dataset: Iris dataset
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  MODEL SELECTION:
+    - Model selection is the process of choosing, from several candidate algorithms and hyperparameter settings, the one that is expected to generalize best to unseen data.
+  CROSS-VALIDATION:
+    - Cross-validation estimates how a model performs across different train-validation splits.
+  GRID SEARCH:
+    - GridSearchCV evaluates every specified combination of model and hyperparameters with cross-validation and selects the combination with the best mean validation score; the best estimator is then refitted on the whole training set.
+  PIPELINES AND DATA LEAKAGE:
+    - Preprocessing must be part of a pipeline so that the scaler is fitted separately within each training fold.
+  FINAL EVALUATION:
+    - The test set is kept separate during the whole selection process.
+  METRICS:
+    - Accuracy is suitable for the balanced Iris dataset (50 samples per class); for imbalanced data additional metrics such as precision, recall and F1-score are needed.
+
+CONCLUSION
+  - The candidate classifiers (Logistic Regression, SVC and Random Forest, with their hyperparameter grids) were compared on the Iris dataset (120 training and 30 test samples) using five-fold stratified cross-validation inside a pipeline with GridSearchCV. The search selected SVC with C = 0.1 and a linear kernel, which had the highest mean cross-validation accuracy of 0.975.
+  - The selected model was then evaluated once on the independent test set and reached a test accuracy of 0.933 (28 of 30 correct): setosa was classified perfectly, while versicolor and virginica had precision and recall of 0.90.
+  - The slightly lower test accuracy compared with the cross-validation accuracy is expected, because the test set is small (30 samples, one sample is 3.3%).
+  - The experiment confirms that models should be selected by cross-validation on the training data, the test set should be used only once, and preprocessing must stay inside the pipeline to avoid data leakage.
+
+
+======================================================================
+EXPERIMENT 10
+======================================================================
+
+TITLE
+  - Hyperparameter Tuning and Optimization
+
+AIM
+  - To understand and apply hyperparameter tuning and optimization techniques to improve machine learning model performance using Python and Scikit-learn, by comparing a baseline Support Vector Classifier (SVC) on the Breast Cancer Wisconsin dataset with models tuned using GridSearchCV and RandomizedSearchCV.
+
+OBJECTIVES
+  - Create a baseline SVC model
+  - Tune hyperparameters with GridSearchCV
+  - Tune hyperparameters with RandomizedSearchCV
+  - Compare baseline and tuned models on the untouched test set
+  - Explain the difference between grid and randomized search
+
+REQUIREMENTS
+  - Software: Python 3, Google Colab / Jupyter Notebook
+  - Libraries: NumPy, pandas, Matplotlib, SciPy (loguniform), Scikit-learn
+  - Dataset: Breast Cancer Wisconsin dataset
+  - Hardware: any computer with internet access (no GPU needed)
+
+THEORY
+  PARAMETERS AND HYPERPARAMETERS:
+    - Model parameters (for example the weights of a model) are learned from the data during training.
+  BASELINE MODEL:
+    - A baseline model with default hyperparameters (here a pipeline of StandardScaler and SVC) is trained first, so that the benefit of tuning can be measured.
+  GRID SEARCH (GRIDSEARCHCV):
+    - Grid search evaluates every combination of a specified set of values with stratified five-fold cross-validation and keeps the best one.
+  RANDOMIZED SEARCH (RANDOMIZEDSEARCHCV):
+    - Randomized search samples a fixed number of combinations (n_iter) from parameter distributions.
+  SCORING AND CROSS-VALIDATION:
+    - The search maximizes a scoring metric on the validation folds; here the F1-score is used because it balances precision and recall.
+  AVOIDING LEAKAGE ON THE TEST SET:
+    - The test set must not be used to choose hyperparameters.
+
+CONCLUSION
+  - A baseline SVC and SVC models tuned with GridSearchCV and RandomizedSearchCV (30 random candidates) were compared on the Breast Cancer Wisconsin dataset (455 training and 114 test samples, F1-score as the cross-validation metric).
+  - Grid search selected C = 0.1, gamma = 'scale' and a linear kernel (best cross-validation F1 0.9810), and randomized search selected a linear kernel with C ≈ 0.0736 and gamma ≈ 0.0009 (best cross-validation F1 0.9844).
+  - On the held-out test set the baseline and both tuned models achieved the same performance: accuracy 0.9825, precision 0.9861, recall 0.9861 and F1-score 0.9861 (the grid-search model's confusion matrix has one error of each type).
+  - Tuning therefore did not improve the test result here, because the default SVC was already close to the best model for this dataset; it did, however, give cross-validated evidence for the choice of a linear kernel.
+  - Cross-validation selects the hyperparameters using only the training data, the test set provides an independent estimate, and grid search is exhaustive while randomized search covers a larger space with a fixed budget.

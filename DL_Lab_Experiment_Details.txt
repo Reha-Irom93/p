@@ -1,0 +1,185 @@
+DEEP LEARNING AND NEURAL NETWORKS LAB (230GAIB91_06) - EXPERIMENT DETAILS, 1-12
+==========================================================================
+
+EXPERIMENT 1
+TITLE: Implementation of a Perceptron using Python and NumPy
+- AIM: To implement a perceptron from scratch, train it on a linearly separable dataset and visualize the decision boundary.
+- OBJECTIVES:
+  * Understand the structure of a single artificial neuron.
+  * Implement the perceptron learning rule.
+  * Observe how the decision boundary evolves with training.
+- REQUIREMENTS: Python 3, NumPy, Matplotlib, scikit-learn (make_blobs), Jupyter/Colab.
+- THEORY:
+  * A perceptron computes y = step(w.x + b).
+  * Update rule: w = w + eta(t - y)x; b = b + eta(t - y).
+  * Decision boundary w1x1 + w2x2 + b = 0 is a straight line.
+  * Converges only for linearly separable data (convergence theorem).
+  * Cannot solve XOR.
+- CONCLUSION: The perceptron classified the linearly separable data with 100% accuracy, and the decision boundary adjusted to separate the two classes. It is limited to linear problems.
+
+EXPERIMENT 2
+TITLE: Multi-Layer Perceptron using TensorFlow/Keras
+- AIM: To build and train an MLP for multi-class classification and evaluate it using accuracy.
+- OBJECTIVES:
+  * Build a multi-layer network with a deep learning framework.
+  * Train and validate it on the Iris/MNIST dataset.
+  * Evaluate it with accuracy metrics.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, NumPy, scikit-learn, Matplotlib, Iris/MNIST dataset.
+- THEORY:
+  * An MLP has input, hidden and output layers of fully connected neurons.
+  * Hidden layers use ReLU; the output uses softmax for multi-class.
+  * Loss: cross-entropy; optimizer: Adam.
+  * Training uses forward pass, loss, backpropagation and weight update.
+  * Overfitting is monitored via validation accuracy.
+- CONCLUSION: The MLP learned non-linear class boundaries and achieved high test accuracy on the dataset, showing the power of hidden layers over a single perceptron.
+
+EXPERIMENT 3
+TITLE: Backpropagation Algorithm from Scratch
+- AIM: To implement backpropagation for a one-hidden-layer network on a toy dataset and visualize gradients and weight updates.
+- OBJECTIVES:
+  * Understand the forward and backward pass.
+  * Derive and implement gradients using the chain rule.
+  * Visualize loss and gradient behaviour.
+- REQUIREMENTS: Python 3, NumPy, Matplotlib.
+- THEORY:
+  * Forward: Z1 = XW1 + b1, A1 = f(Z1), Z2 = A1W2 + b2, A2 = f(Z2).
+  * Backward uses the chain rule, e.g. dL/dW2 = A1^T . dZ2.
+  * Sigmoid derivative = s(1 - s).
+  * Update: W = W - eta*dL/dW.
+  * Random initialization breaks symmetry.
+- CONCLUSION: The network learned XOR; loss decreased steadily and gradients shrank near convergence, demonstrating how backpropagation trains hidden layers.
+
+EXPERIMENT 4
+TITLE: Comparison of Activation Functions in a Deep Network
+- AIM: To train a multi-hidden-layer network with sigmoid, tanh, ReLU and Leaky ReLU and compare convergence speed and accuracy.
+- OBJECTIVES:
+  * Learn properties of common activations.
+  * Compare their convergence and accuracy.
+  * Understand vanishing gradients and dying ReLU.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, scikit-learn (make_moons), Matplotlib.
+- THEORY:
+  * Sigmoid: range (0,1), saturates, vanishing gradient.
+  * Tanh: range (-1,1), zero-centred, still saturates.
+  * ReLU: max(0,x), fast, can die.
+  * Leaky ReLU: small slope for negative inputs, avoids dying neurons.
+- CONCLUSION: ReLU and Leaky ReLU converged faster than sigmoid and tanh with comparable or better accuracy; sigmoid was slowest.
+
+EXPERIMENT 5
+TITLE: Supervised Learning Algorithms from Scratch
+- AIM: To implement linear regression, logistic regression and k-NN using NumPy and compare accuracy and computational efficiency.
+- OBJECTIVES:
+  * Implement the three algorithms without ML libraries.
+  * Evaluate on synthetic datasets.
+  * Compare performance and run time.
+- REQUIREMENTS: Python 3, NumPy, scikit-learn (dataset generation/split only), time module.
+- THEORY:
+  * Linear regression: y = wx + b, minimize MSE (gradient descent or normal equation).
+  * Logistic regression: sigmoid output with cross-entropy loss.
+  * k-NN: majority vote of k nearest points using Euclidean distance; lazy learner.
+  * Metrics: R2 for regression, accuracy for classification.
+- CONCLUSION: All three models worked on synthetic data; logistic regression and linear regression were fast to predict, whereas k-NN needed no training but was slower at prediction.
+
+EXPERIMENT 6
+TITLE: Clustering using k-Means and Hierarchical Methods
+- AIM: To apply k-means and hierarchical clustering to a real dataset, visualize the clusters and evaluate with the silhouette score.
+- OBJECTIVES:
+  * Understand unsupervised learning.
+  * Implement both algorithms with scikit-learn.
+  * Evaluate cluster quality.
+- REQUIREMENTS: Python 3, scikit-learn, SciPy, Matplotlib, Iris dataset.
+- THEORY:
+  * K-means minimizes within-cluster sum of squares; elbow method picks k.
+  * Hierarchical (agglomerative) merges clusters bottom-up; shown by a dendrogram; Ward linkage.
+  * Silhouette = (b - a)/max(a,b), range -1 to 1.
+- CONCLUSION: Both methods grouped the data into meaningful clusters; silhouette scores quantified the quality, with k = 2 or 3 being suitable for Iris.
+
+EXPERIMENT 7
+TITLE: Comparison of FNN, CNN and RNN Architectures
+- AIM: To train FNN, CNN and RNN models on benchmark datasets and compare accuracy and computational efficiency.
+- OBJECTIVES:
+  * Implement the three architectures.
+  * Train on CIFAR-10 and IMDB.
+  * Compare accuracy, parameters and training time.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, CIFAR-10 and IMDB datasets (auto-downloaded), GPU recommended.
+- THEORY:
+  * FNN: fully connected, ignores structure.
+  * CNN: convolution and pooling extract spatial features with shared weights.
+  * RNN: hidden state captures sequence order.
+  * Embedding layer converts words to dense vectors.
+- CONCLUSION: The CNN outperformed the FNN on images with fewer parameters, and the RNN handled text sequences but trained more slowly.
+
+EXPERIMENT 8
+TITLE: Gradient Descent Optimization for Linear Regression
+- AIM: To implement gradient descent from scratch and visualize cost convergence.
+- OBJECTIVES:
+  * Understand cost minimization.
+  * Find optimal w and b iteratively.
+  * Study the effect of the learning rate.
+- REQUIREMENTS: Python 3, NumPy, Matplotlib.
+- THEORY:
+  * Cost J = (1/2m) * sum((wx + b - y)^2).
+  * Updates: w = w - eta*dJ/dw, b = b - eta*dJ/db.
+  * Variants: batch, stochastic, mini-batch.
+  * Convex cost, so a single global minimum.
+- CONCLUSION: The cost decreased monotonically and the learned parameters approached the true values (w=3, b=4), confirming convergence.
+
+EXPERIMENT 9
+TITLE: Matrix Operations and Neural Network Propagation using NumPy
+- AIM: To perform matrix operations and use them for forward and backward propagation in a one-hidden-layer network, visualizing intermediate outputs.
+- OBJECTIVES:
+  * Perform matrix addition, multiplication and element-wise operations.
+  * Vectorize forward and backward propagation.
+  * Visualize activations and gradients.
+- REQUIREMENTS: Python 3, NumPy, Matplotlib.
+- THEORY:
+  * Layer: Z = XW + b, A = f(Z).
+  * Matrix multiplication needs (m x n).(n x p) shapes.
+  * Backprop in matrix form uses transposes and the Hadamard product.
+  * Vectorization is faster than loops.
+- CONCLUSION: Matrix operations allowed efficient implementation of the network, and visualizations showed how information and gradients flow through layers.
+
+EXPERIMENT 10
+TITLE: Convolutional Neural Network Architectures
+- AIM: To construct CNNs, train on MNIST/CIFAR-10 and compare architectures with different layers, filter sizes and pooling.
+- OBJECTIVES:
+  * Build CNNs with Conv, Pool, Dense layers.
+  * Vary depth, kernel size and pooling type.
+  * Evaluate using accuracy.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, MNIST/CIFAR-10 dataset, GPU optional.
+- THEORY:
+  * Convolution extracts local features; output size = (W - F + 2P)/S + 1.
+  * Pooling reduces dimensions and adds translation invariance.
+  * Dropout and BatchNorm help regularize and stabilize.
+  * Deeper networks learn more abstract features.
+- CONCLUSION: CNNs reached high accuracy; deeper models and suitable kernels improved results, while max pooling generally performed better than average pooling.
+
+EXPERIMENT 11
+TITLE: Transfer Learning and Fine-Tuning with Pre-trained Models
+- AIM: To fine-tune a pre-trained model (e.g. MobileNetV2) on a custom dataset and compare with training from scratch.
+- OBJECTIVES:
+  * Use pre-trained ImageNet models.
+  * Apply feature extraction and fine-tuning.
+  * Analyze convergence speed and accuracy trade-offs.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, internet to download weights and dataset (e.g. flowers), GPU recommended.
+- THEORY:
+  * Transfer learning reuses features learned on large datasets.
+  * Feature extraction freezes the base and trains a new head.
+  * Fine-tuning unfreezes top layers with a low learning rate.
+  * Models: VGG16, ResNet (skip connections), MobileNet (depthwise separable convolutions).
+- CONCLUSION: The pre-trained model converged faster and achieved higher accuracy than the scratch model with less data and training time.
+
+EXPERIMENT 12
+TITLE: RNN, LSTM and GRU for Sentiment Analysis
+- AIM: To implement RNN variants on sequential text data (IMDB) and compare their performance.
+- OBJECTIVES:
+  * Understand recurrent architectures.
+  * Train SimpleRNN, LSTM and GRU models.
+  * Evaluate using accuracy and loss.
+- REQUIREMENTS: Python 3, TensorFlow/Keras, IMDB dataset, GPU recommended.
+- THEORY:
+  * RNN: h_t = f(W_x x_t + W_h h_(t-1) + b).
+  * Vanilla RNN suffers vanishing gradients.
+  * LSTM uses forget, input and output gates with a cell state.
+  * GRU uses update and reset gates; fewer parameters.
+  * Sequences are padded and embedded.
+- CONCLUSION: LSTM and GRU outperformed the vanilla RNN by handling long-term dependencies; GRU trained faster with similar accuracy.

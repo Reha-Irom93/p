@@ -1,0 +1,407 @@
+DEEP LEARNING AND NEURAL NETWORKS LAB - CODES WITH LINE-BY-LINE EXPLANATION, EXPERIMENTS 1-12
+Install once: pip install numpy matplotlib scikit-learn scipy tensorflow
+Every line has a comment (# ...) after it explaining what it does.
+=====================================================================
+
+#####################################################################
+# EXPERIMENT 1: Perceptron (NumPy) with decision boundary
+#####################################################################
+import numpy as np                                   # NumPy: arrays and maths
+import matplotlib.pyplot as plt                      # Matplotlib: plotting
+from sklearn.datasets import make_blobs              # generates clustered sample data
+
+X, y = make_blobs(n_samples=100, centers=2, cluster_std=1.0, random_state=6)  # 100 points, 2 classes (0/1); X = features (100x2), y = labels
+
+class Perceptron:                                    # define the perceptron class
+    def __init__(self, lr=0.1, epochs=20):           # constructor with learning rate and number of epochs
+        self.lr, self.epochs = lr, epochs            # store them on the object
+    def fit(self, X, y):                             # training method
+        self.w = np.zeros(X.shape[1]); self.b = 0.0; self.errors = []  # weights=0 (one per feature), bias=0, list to log errors per epoch
+        for _ in range(self.epochs):                 # repeat for each epoch
+            err = 0                                  # count mistakes in this epoch
+            for xi, ti in zip(X, y):                 # go through each sample (xi) and its target (ti)
+                yi = self.predict(xi)                # current prediction for this sample
+                upd = self.lr * (ti - yi)            # update amount: 0 if correct, +-lr if wrong
+                self.w += upd * xi                   # perceptron rule: w = w + eta*(t-y)*x
+                self.b += upd                        # bias update: b = b + eta*(t-y)
+                err += int(upd != 0)                 # add 1 if this sample was misclassified
+            self.errors.append(err)                  # save the epoch's error count
+        return self                                  # return trained object (allows chaining)
+    def predict(self, X):                            # prediction method
+        return np.where(np.dot(X, self.w) + self.b >= 0, 1, 0)  # step function: 1 if w.x+b >= 0 else 0
+
+p = Perceptron().fit(X, y)                           # create and train with default settings
+print("Accuracy:", np.mean(p.predict(X) == y))       # fraction of correct predictions
+
+xx = np.linspace(X[:, 0].min() - 1, X[:, 0].max() + 1, 100)  # 100 x1 values spanning the data range
+yy = -(p.w[0] * xx + p.b) / p.w[1]                   # solve w1*x1 + w2*x2 + b = 0 for x2 (boundary line)
+plt.scatter(X[:, 0], X[:, 1], c=y, cmap="bwr")       # plot points coloured by class
+plt.plot(xx, yy, "k-"); plt.title("Perceptron decision boundary"); plt.show()  # draw black boundary line, add title, display
+plt.plot(p.errors, marker="o"); plt.xlabel("Epoch"); plt.ylabel("Misclassifications"); plt.show()  # error count vs epoch (should fall to 0)
+
+
+#####################################################################
+# EXPERIMENT 2: MLP on Iris (TensorFlow/Keras)
+#####################################################################
+import numpy as np                                   # NumPy for arrays
+from sklearn.datasets import load_iris               # built-in Iris dataset
+from sklearn.model_selection import train_test_split # splits data into train/test
+from sklearn.preprocessing import StandardScaler     # standardizes features (mean 0, std 1)
+import tensorflow as tf                              # TensorFlow deep learning library
+from tensorflow.keras import layers, models          # Keras layers and model classes
+
+X, y = load_iris(return_X_y=True)                    # X: 150x4 measurements, y: class 0/1/2
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)  # 80/20 split, fixed seed, same class ratio in both
+sc = StandardScaler().fit(Xtr)                       # learn mean/std from TRAIN data only
+Xtr, Xte = sc.transform(Xtr), sc.transform(Xte)      # apply the scaling to train and test
+
+model = models.Sequential([                          # layers stacked one after another
+    layers.Input(shape=(4,)),                        # input layer: 4 features
+    layers.Dense(16, activation="relu"),             # hidden layer 1: 16 neurons, ReLU
+    layers.Dense(8, activation="relu"),              # hidden layer 2: 8 neurons, ReLU
+    layers.Dense(3, activation="softmax")])          # output: 3 class probabilities summing to 1
+model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])  # Adam optimizer, loss for integer labels, track accuracy
+hist = model.fit(Xtr, ytr, epochs=100, batch_size=8, validation_split=0.2, verbose=0)  # train 100 epochs, 8 samples per update, 20% of train for validation, silent
+loss, acc = model.evaluate(Xte, yte, verbose=0)      # measure loss and accuracy on unseen test data
+print("Test accuracy:", acc)                         # show test accuracy
+
+# MNIST variant: replace data with                   # (comment) alternative dataset instructions
+# (Xtr,ytr),(Xte,yte)=tf.keras.datasets.mnist.load_data(); Xtr,Xte=Xtr/255.,Xte/255.   # load MNIST, scale pixels to 0-1
+# and use layers.Flatten(input_shape=(28,28)), Dense(128,'relu'), Dense(10,'softmax')   # flatten 28x28 image, hidden layer, 10-class output
+
+
+#####################################################################
+# EXPERIMENT 3: Backpropagation from scratch (XOR, one hidden layer)
+#####################################################################
+import numpy as np                                   # NumPy for matrix maths
+import matplotlib.pyplot as plt                      # plotting
+np.random.seed(1)                                    # fixed seed so results repeat
+
+X = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=float) # XOR inputs (4 samples, 2 features)
+Y = np.array([[0],[1],[1],[0]], dtype=float)         # XOR targets (1 if inputs differ)
+
+sigmoid = lambda z: 1 / (1 + np.exp(-z))             # sigmoid activation squashes values to (0,1)
+W1 = np.random.randn(2, 4); b1 = np.zeros((1, 4))    # hidden layer: 2 inputs -> 4 neurons, random weights, zero bias
+W2 = np.random.randn(4, 1); b2 = np.zeros((1, 1))    # output layer: 4 hidden -> 1 output
+lr = 0.5                                             # learning rate (step size)
+loss_hist, g1_hist, g2_hist = [], [], []             # lists to record loss and gradient sizes
+
+for epoch in range(10000):                           # train for 10000 iterations
+    # forward                                        # (comment) forward pass section
+    A1 = sigmoid(X @ W1 + b1)                        # hidden activations = sigmoid(X.W1 + b1)
+    A2 = sigmoid(A1 @ W2 + b2)                       # output prediction = sigmoid(A1.W2 + b2)
+    loss = np.mean((A2 - Y) ** 2)                    # mean squared error
+    # backward                                       # (comment) backward pass section
+    dZ2 = (A2 - Y) * A2 * (1 - A2)                   # output error x sigmoid derivative (chain rule)
+    dW2 = A1.T @ dZ2;   db2 = dZ2.sum(0, keepdims=True)  # gradients of output weights and bias
+    dZ1 = (dZ2 @ W2.T) * A1 * (1 - A1)               # push error back to hidden layer x sigmoid derivative
+    dW1 = X.T @ dZ1;    db1 = dZ1.sum(0, keepdims=True)  # gradients of hidden weights and bias
+    # update                                         # (comment) weight update section
+    W2 -= lr * dW2; b2 -= lr * db2                   # gradient descent on output layer
+    W1 -= lr * dW1; b1 -= lr * db1                   # gradient descent on hidden layer
+    loss_hist.append(loss)                           # record loss
+    g1_hist.append(np.linalg.norm(dW1)); g2_hist.append(np.linalg.norm(dW2))  # record gradient magnitudes
+
+print("Predictions:", np.round(A2.ravel(), 3))       # final outputs (should be ~0,1,1,0)
+plt.subplot(1, 2, 1); plt.plot(loss_hist); plt.title("Loss")  # left plot: loss curve
+plt.subplot(1, 2, 2); plt.plot(g1_hist, label="|dW1|"); plt.plot(g2_hist, label="|dW2|")  # right plot: gradient norms of both layers
+plt.title("Gradient norms"); plt.legend(); plt.show()  # title, legend, display
+
+
+#####################################################################
+# EXPERIMENT 4: Compare activation functions
+#####################################################################
+import matplotlib.pyplot as plt                      # plotting
+from sklearn.datasets import make_moons              # two interleaving half-circles dataset (non-linear)
+from sklearn.model_selection import train_test_split # train/test split
+from sklearn.preprocessing import StandardScaler     # feature scaling
+import tensorflow as tf                              # TensorFlow
+from tensorflow.keras import layers, models          # Keras layers/models
+
+X, y = make_moons(n_samples=2000, noise=0.2, random_state=0)  # 2000 points, 2 classes, some noise
+Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=0)  # 80/20 split
+sc = StandardScaler().fit(Xtr); Xtr, Xte = sc.transform(Xtr), sc.transform(Xte)  # fit scaler on train, scale both
+
+def build(act):                                      # builds a network using the given activation name
+    a = (lambda: layers.LeakyReLU(0.1)) if act == "leaky_relu" else (lambda: layers.Activation(act))  # factory: LeakyReLU layer (slope 0.1) or a standard activation layer
+    m = models.Sequential([layers.Input(shape=(2,))])  # model with 2-feature input
+    for _ in range(3):                               # 3 hidden layers
+        m.add(layers.Dense(32)); m.add(a())          # 32-neuron linear layer followed by the activation
+    m.add(layers.Dense(1, activation="sigmoid"))     # output: probability of class 1
+    m.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])  # binary loss, Adam, accuracy
+    return m                                         # return the model
+
+for act in ["sigmoid", "tanh", "relu", "leaky_relu"]:  # test each activation
+    tf.keras.utils.set_random_seed(0)                # same random start for a fair comparison
+    h = build(act).fit(Xtr, ytr, epochs=50, batch_size=32, validation_data=(Xte, yte), verbose=0)  # train and keep history
+    plt.plot(h.history["loss"], label=act)           # plot training loss curve for this activation
+    print(act, "final val acc:", round(h.history["val_accuracy"][-1], 4))  # print last-epoch validation accuracy
+plt.xlabel("Epoch"); plt.ylabel("Training loss"); plt.legend(); plt.show()  # label axes, legend, display
+
+
+#####################################################################
+# EXPERIMENT 5: Linear Reg, Logistic Reg, k-NN from scratch
+#####################################################################
+import numpy as np, time                             # NumPy and time (for timing)
+from sklearn.datasets import make_regression, make_classification  # synthetic datasets
+from sklearn.model_selection import train_test_split # split helper
+
+class LinearReg:                                     # linear regression via gradient descent
+    def fit(self, X, y, lr=0.01, n=1000):            # lr = learning rate, n = iterations
+        self.w = np.zeros(X.shape[1]); self.b = 0    # start weights and bias at zero
+        for _ in range(n):                           # repeat n times
+            e = X @ self.w + self.b - y              # error = prediction - actual
+            self.w -= lr * X.T @ e / len(y); self.b -= lr * e.mean()  # move weights and bias against the gradient
+        return self                                  # return trained model
+    def predict(self, X): return X @ self.w + self.b # predicted value = X.w + b
+
+class LogisticReg:                                   # logistic regression via gradient descent
+    def fit(self, X, y, lr=0.1, n=1000):             # learning rate and iterations
+        self.w = np.zeros(X.shape[1]); self.b = 0    # initialize parameters to zero
+        for _ in range(n):                           # iterate
+            p = 1 / (1 + np.exp(-(X @ self.w + self.b)))  # sigmoid gives probability of class 1
+            self.w -= lr * X.T @ (p - y) / len(y); self.b -= lr * (p - y).mean()  # cross-entropy gradient step
+        return self                                  # return trained model
+    def predict(self, X): return (1 / (1 + np.exp(-(X @ self.w + self.b))) >= 0.5).astype(int)  # class 1 if probability >= 0.5
+
+class KNN:                                           # k-nearest neighbours classifier
+    def __init__(self, k=5): self.k = k              # number of neighbours to vote
+    def fit(self, X, y): self.X, self.y = X, y; return self  # just memorize training data (lazy learner)
+    def predict(self, X):                            # classify each query row
+        out = []                                     # list for predictions
+        for x in X:                                  # loop over query points
+            d = np.sqrt(((self.X - x) ** 2).sum(1))  # Euclidean distance to every training point
+            out.append(np.bincount(self.y[np.argsort(d)[:self.k]]).argmax())  # take k closest labels, majority vote
+        return np.array(out)                         # return as array
+
+# Regression                                         # (comment) regression section
+Xr, yr = make_regression(n_samples=500, n_features=3, noise=10, random_state=1)  # 500 samples, 3 features, noisy target
+Xa, Xb, ya, yb = train_test_split(Xr, yr, random_state=1)  # split train (a) / test (b), default 75/25
+t = time.time(); lr_m = LinearReg().fit(Xa, ya); tl = time.time() - t  # train and measure time taken
+pred = lr_m.predict(Xb)                              # predict on test data
+r2 = 1 - ((yb - pred) ** 2).sum() / ((yb - yb.mean()) ** 2).sum()  # R2 = 1 - SSres/SStot
+print("Linear Regression R2:", round(r2, 3), "time:", round(tl, 4))  # print score and time
+
+# Classification                                     # (comment) classification section
+Xc, yc = make_classification(n_samples=500, n_features=4, n_informative=3, n_redundant=0, random_state=1)  # 500 samples, 4 features, 2 classes
+Xa, Xb, ya, yb = train_test_split(Xc, yc, random_state=1)  # split train/test
+for name, m in [("Logistic Regression", LogisticReg()), ("kNN", KNN(5))]:  # evaluate both classifiers
+    t = time.time(); m.fit(Xa, ya); pr = m.predict(Xb)  # train, predict and time them
+    print(name, "accuracy:", np.mean(pr == yb), "time:", round(time.time() - t, 4))  # accuracy and total time
+
+
+#####################################################################
+# EXPERIMENT 6: k-Means and Hierarchical clustering
+#####################################################################
+import numpy as np, matplotlib.pyplot as plt        # NumPy and plotting
+from sklearn.datasets import load_iris               # Iris dataset
+from sklearn.preprocessing import StandardScaler     # scaling
+from sklearn.cluster import KMeans, AgglomerativeClustering  # the two clustering algorithms
+from sklearn.decomposition import PCA                # reduces to 2D for plotting
+from sklearn.metrics import silhouette_score         # cluster quality metric
+from scipy.cluster.hierarchy import dendrogram, linkage  # dendrogram tools
+
+X = StandardScaler().fit_transform(load_iris().data) # load 4 features and standardize them (labels are ignored: unsupervised)
+X2 = PCA(2).fit_transform(X)                         # project to 2 principal components for visualization
+
+# Elbow and silhouette for k                         # (comment) choose k section
+for k in range(2, 7):                                # try k = 2..6
+    km = KMeans(k, n_init=10, random_state=0).fit(X) # k-means with 10 random starts, fixed seed
+    print(k, "inertia:", round(km.inertia_, 1), "silhouette:", round(silhouette_score(X, km.labels_), 3))  # inertia (for elbow) and silhouette
+
+km = KMeans(3, n_init=10, random_state=0).fit(X)     # final k-means with 3 clusters
+ag = AgglomerativeClustering(3, linkage="ward").fit(X)  # hierarchical clustering, 3 clusters, Ward linkage
+print("KMeans silhouette:", silhouette_score(X, km.labels_))  # k-means quality
+print("Hierarchical silhouette:", silhouette_score(X, ag.labels_))  # hierarchical quality
+
+plt.subplot(1, 2, 1); plt.scatter(X2[:, 0], X2[:, 1], c=km.labels_); plt.title("K-Means")  # left: k-means clusters in 2D
+plt.subplot(1, 2, 2); plt.scatter(X2[:, 0], X2[:, 1], c=ag.labels_); plt.title("Hierarchical"); plt.show()  # right: hierarchical clusters, display
+dendrogram(linkage(X, "ward")); plt.title("Dendrogram"); plt.show()  # build Ward merge tree and draw dendrogram
+
+
+#####################################################################
+# EXPERIMENT 7: FNN vs CNN (CIFAR-10) and RNN (IMDB)
+#####################################################################
+import time                                          # for timing training
+import tensorflow as tf                              # TensorFlow
+from tensorflow.keras import layers, models          # Keras layers/models
+
+# ---- CIFAR-10: FNN and CNN ----                    # (comment) image section
+(Xtr, ytr), (Xte, yte) = tf.keras.datasets.cifar10.load_data()  # download 32x32 colour images, 10 classes
+Xtr, Xte = Xtr / 255.0, Xte / 255.0                  # scale pixels from 0-255 to 0-1
+
+fnn = models.Sequential([layers.Input((32, 32, 3)), layers.Flatten(),  # FNN: input image, flatten to 3072 values
+    layers.Dense(512, activation="relu"), layers.Dense(256, activation="relu"),  # two dense hidden layers
+    layers.Dense(10, activation="softmax")])         # output: 10 class probabilities
+cnn = models.Sequential([layers.Input((32, 32, 3)),  # CNN: same input
+    layers.Conv2D(32, 3, activation="relu"), layers.MaxPooling2D(),  # 32 3x3 filters then halve size
+    layers.Conv2D(64, 3, activation="relu"), layers.MaxPooling2D(),  # 64 filters then halve size
+    layers.Flatten(), layers.Dense(64, activation="relu"),  # flatten features, dense layer
+    layers.Dense(10, activation="softmax")])         # output layer
+
+for name, m in [("FNN", fnn), ("CNN", cnn)]:         # train and test both models
+    m.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])  # optimizer, loss, metric
+    t = time.time(); m.fit(Xtr, ytr, epochs=5, batch_size=64, verbose=0)  # train 5 epochs, time it
+    print(name, "acc:", m.evaluate(Xte, yte, verbose=0)[1], "time:", round(time.time() - t, 1), "params:", m.count_params())  # test accuracy, time, parameter count
+
+# ---- IMDB: RNN ----                                # (comment) text section
+(Xa, ya), (Xb, yb) = tf.keras.datasets.imdb.load_data(num_words=10000)  # movie reviews as word-index lists, top 10000 words
+Xa = tf.keras.utils.pad_sequences(Xa, maxlen=200); Xb = tf.keras.utils.pad_sequences(Xb, maxlen=200)  # pad/cut every review to 200 words
+rnn = models.Sequential([layers.Input((200,)), layers.Embedding(10000, 32),  # input of 200 word ids, embed each into 32-dim vector
+    layers.SimpleRNN(32), layers.Dense(1, activation="sigmoid")])  # RNN with 32 units, sigmoid output (positive/negative)
+rnn.compile("adam", "binary_crossentropy", metrics=["accuracy"])  # binary classification setup
+t = time.time(); rnn.fit(Xa, ya, epochs=3, batch_size=64, validation_split=0.2, verbose=0)  # train 3 epochs, time it
+print("RNN acc:", rnn.evaluate(Xb, yb, verbose=0)[1], "time:", round(time.time() - t, 1))  # test accuracy and time
+
+
+#####################################################################
+# EXPERIMENT 8: Gradient descent for linear regression
+#####################################################################
+import numpy as np                                   # NumPy
+import matplotlib.pyplot as plt                      # plotting
+np.random.seed(0)                                    # reproducible random numbers
+
+X = 2 * np.random.rand(100, 1)                       # 100 random x values between 0 and 2
+y = 4 + 3 * X + np.random.randn(100, 1)              # true line y = 4 + 3x plus Gaussian noise (true b=4, w=3)
+
+w, b, lr, iters = 0.0, 0.0, 0.1, 200                 # start parameters at 0, learning rate 0.1, 200 iterations
+m = len(X); costs = []                               # m = number of samples, list to store cost
+for i in range(iters):                               # gradient descent loop
+    pred = w * X + b                                 # predictions with current w and b
+    err = pred - y                                   # error for each sample
+    costs.append((err ** 2).sum() / (2 * m))         # cost J = (1/2m) * sum(err^2)
+    w -= lr * (err * X).sum() / m                    # update w using dJ/dw
+    b -= lr * err.sum() / m                          # update b using dJ/db
+
+print("Learned w=%.3f, b=%.3f" % (w, b))             # learned parameters (close to 3 and 4)
+plt.subplot(1, 2, 1); plt.plot(costs); plt.xlabel("Iteration"); plt.ylabel("Cost J"); plt.title("Convergence")  # left: cost falling
+plt.subplot(1, 2, 2); plt.scatter(X, y); plt.plot(X, w * X + b, "r"); plt.title("Fitted line"); plt.show()  # right: data with fitted red line
+
+
+#####################################################################
+# EXPERIMENT 9: Matrix operations + forward/backward pass
+#####################################################################
+import numpy as np                                   # NumPy
+import matplotlib.pyplot as plt                      # plotting
+np.random.seed(0)                                    # reproducibility
+
+A = np.array([[1, 2], [3, 4]]); B = np.array([[5, 6], [7, 8]])  # two 2x2 matrices
+print("Add:\n", A + B)                               # element-wise addition
+print("Matrix multiply:\n", A @ B)                   # true matrix product (rows x columns)
+print("Element-wise:\n", A * B)                      # element-by-element (Hadamard) product
+print("Transpose:\n", A.T)                           # rows and columns swapped
+
+# Network 3 -> 4 -> 1, sigmoid, MSE                  # (comment) architecture description
+X = np.random.rand(5, 3); Y = np.random.randint(0, 2, (5, 1)).astype(float)  # 5 random samples with 3 features, random 0/1 targets
+W1 = np.random.randn(3, 4) * 0.5; b1 = np.zeros((1, 4))  # hidden layer weights (small random) and bias
+W2 = np.random.randn(4, 1) * 0.5; b2 = np.zeros((1, 1))  # output layer weights and bias
+sig = lambda z: 1 / (1 + np.exp(-z))                 # sigmoid function
+
+lr, losses = 0.5, []                                 # learning rate and loss list
+for i in range(500):                                 # 500 training iterations
+    Z1 = X @ W1 + b1; A1 = sig(Z1)                   # hidden layer: linear step then sigmoid
+    Z2 = A1 @ W2 + b2; A2 = sig(Z2)                  # output layer: linear step then sigmoid
+    losses.append(np.mean((A2 - Y) ** 2))            # record mean squared error
+    dZ2 = (A2 - Y) * A2 * (1 - A2) / len(X)          # output-layer error (averaged over samples)
+    dW2 = A1.T @ dZ2; db2 = dZ2.sum(0, keepdims=True)  # output weight and bias gradients
+    dZ1 = (dZ2 @ W2.T) * A1 * (1 - A1)               # error propagated back to hidden layer
+    dW1 = X.T @ dZ1; db1 = dZ1.sum(0, keepdims=True) # hidden weight and bias gradients
+    W2 -= lr * dW2; b2 -= lr * db2; W1 -= lr * dW1; b1 -= lr * db1  # update all parameters
+    if i == 0:                                       # only on the first iteration
+        print("Hidden activations (1st iter):\n", np.round(A1, 3))  # show hidden outputs
+        print("dW1 (1st iter):\n", np.round(dW1, 4)) # show hidden-layer gradients
+
+plt.plot(losses); plt.title("Loss"); plt.xlabel("Iteration"); plt.show()  # loss curve
+plt.imshow(A1, cmap="viridis"); plt.colorbar(); plt.title("Hidden layer outputs"); plt.show()  # heatmap of hidden activations
+
+
+#####################################################################
+# EXPERIMENT 10: CNN variants on MNIST
+#####################################################################
+import tensorflow as tf                              # TensorFlow
+from tensorflow.keras import layers, models          # Keras layers/models
+
+(Xtr, ytr), (Xte, yte) = tf.keras.datasets.mnist.load_data()  # download 28x28 handwritten digits
+Xtr = (Xtr / 255.0)[..., None]; Xte = (Xte / 255.0)[..., None]  # scale to 0-1 and add channel axis -> (N,28,28,1)
+
+def make_cnn(n_conv=2, filters=32, ksize=3, pool="max"):  # builds a CNN with chosen depth, filters, kernel and pooling
+    P = layers.MaxPooling2D if pool == "max" else layers.AveragePooling2D  # choose pooling layer class
+    m = models.Sequential([layers.Input((28, 28, 1))])  # start with grayscale input
+    for i in range(n_conv):                          # add n_conv conv blocks
+        m.add(layers.Conv2D(filters * 2 ** i, ksize, activation="relu", padding="same"))  # conv layer, filters double each block, 'same' keeps size
+        m.add(P(pool_size=2))                        # pooling halves the width and height
+    m.add(layers.Flatten()); m.add(layers.Dropout(0.3))  # flatten to a vector, randomly drop 30% of units
+    m.add(layers.Dense(64, activation="relu")); m.add(layers.Dense(10, activation="softmax"))  # dense layer then 10-class output
+    m.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])  # optimizer, loss, metric
+    return m                                         # return the model
+
+configs = [dict(n_conv=1, ksize=3), dict(n_conv=2, ksize=3),  # 1 conv block; 2 conv blocks
+           dict(n_conv=2, ksize=5), dict(n_conv=2, ksize=3, pool="avg")]  # bigger 5x5 kernel; average pooling
+for cfg in configs:                                  # test each configuration
+    m = make_cnn(**cfg)                              # build the model from the settings
+    m.fit(Xtr, ytr, epochs=3, batch_size=128, validation_split=0.1, verbose=0)  # train 3 epochs with 10% validation
+    print(cfg, "test acc:", round(m.evaluate(Xte, yte, verbose=0)[1], 4), "params:", m.count_params())  # print settings, test accuracy, parameters
+
+
+#####################################################################
+# EXPERIMENT 11: Transfer learning (MobileNetV2) vs scratch
+#####################################################################
+import pathlib, tensorflow as tf                     # pathlib for folder paths, TensorFlow
+from tensorflow.keras import layers, models          # Keras layers/models
+
+url = "https://storage.googleapis.com/download.tensorflow.org/example_images/flower_photos.tgz"  # flower photo dataset (5 classes)
+data_dir = pathlib.Path(tf.keras.utils.get_file("flower_photos", origin=url, untar=True))  # download, extract, get folder path
+IMG = (160, 160)                                     # resize all images to 160x160
+train = tf.keras.utils.image_dataset_from_directory(data_dir, validation_split=0.2, subset="training", seed=1, image_size=IMG, batch_size=32)  # 80% training images in batches of 32
+val = tf.keras.utils.image_dataset_from_directory(data_dir, validation_split=0.2, subset="validation", seed=1, image_size=IMG, batch_size=32)  # remaining 20% for validation (same seed = no overlap)
+n_cls = len(train.class_names)                       # number of flower classes
+
+# A) Feature extraction                              # (comment) part A
+base = tf.keras.applications.MobileNetV2(input_shape=IMG + (3,), include_top=False, weights="imagenet")  # pre-trained MobileNetV2 without its ImageNet classifier
+base.trainable = False                               # freeze base so its weights are not changed
+inp = layers.Input(IMG + (3,))                       # new model input
+x = tf.keras.applications.mobilenet_v2.preprocess_input(inp)  # scale pixels the way MobileNetV2 expects (-1 to 1)
+x = base(x, training=False)                          # pass through frozen base (inference mode)
+x = layers.GlobalAveragePooling2D()(x); x = layers.Dropout(0.2)(x)  # average each feature map to one value, then drop 20%
+out = layers.Dense(n_cls, activation="softmax")(x)   # new classifier head for our flower classes
+tl = models.Model(inp, out)                          # build the full model
+tl.compile(tf.keras.optimizers.Adam(1e-3), "sparse_categorical_crossentropy", metrics=["accuracy"])  # Adam with learning rate 0.001
+tl.fit(train, validation_data=val, epochs=5)         # train only the new head for 5 epochs
+
+# B) Fine-tuning: unfreeze top layers, low LR        # (comment) part B
+base.trainable = True                                # unfreeze the base model
+for l in base.layers[:-30]: l.trainable = False      # keep all but the last 30 layers frozen
+tl.compile(tf.keras.optimizers.Adam(1e-5), "sparse_categorical_crossentropy", metrics=["accuracy"])  # recompile with a very small learning rate
+tl.fit(train, validation_data=val, epochs=5)         # fine-tune for 5 more epochs
+
+# C) From scratch for comparison                     # (comment) part C
+scratch = models.Sequential([layers.Input(IMG + (3,)), layers.Rescaling(1. / 255),  # plain CNN: input, scale pixels to 0-1
+    layers.Conv2D(32, 3, activation="relu"), layers.MaxPooling2D(),  # conv block 1
+    layers.Conv2D(64, 3, activation="relu"), layers.MaxPooling2D(),  # conv block 2
+    layers.Flatten(), layers.Dense(128, activation="relu"), layers.Dense(n_cls, activation="softmax")])  # flatten, dense, class output
+scratch.compile("adam", "sparse_categorical_crossentropy", metrics=["accuracy"])  # compile
+scratch.fit(train, validation_data=val, epochs=5)    # train from random weights for comparison
+
+
+#####################################################################
+# EXPERIMENT 12: RNN, LSTM, GRU on IMDB sentiment
+#####################################################################
+import time                                          # timing
+import tensorflow as tf                              # TensorFlow
+from tensorflow.keras import layers, models          # Keras layers/models
+
+(Xtr, ytr), (Xte, yte) = tf.keras.datasets.imdb.load_data(num_words=10000)  # IMDB reviews as word-id lists (top 10000 words), labels 0/1
+Xtr = tf.keras.utils.pad_sequences(Xtr, maxlen=200)  # make every training review exactly 200 ids
+Xte = tf.keras.utils.pad_sequences(Xte, maxlen=200)  # same for test reviews
+
+def build(cell):                                     # builds a model using the given recurrent layer type
+    return models.Sequential([layers.Input((200,)), layers.Embedding(10000, 64),  # input 200 ids, embed each word into 64 numbers
+        cell(64), layers.Dense(1, activation="sigmoid")])  # recurrent layer with 64 units, sigmoid output (positive probability)
+
+for name, cell in [("SimpleRNN", layers.SimpleRNN), ("LSTM", layers.LSTM), ("GRU", layers.GRU)]:  # compare three cell types
+    m = build(cell)                                  # create the model
+    m.compile("adam", "binary_crossentropy", metrics=["accuracy"])  # binary classification setup
+    t = time.time()                                  # start timer
+    m.fit(Xtr, ytr, epochs=3, batch_size=64, validation_split=0.2, verbose=0)  # train 3 epochs, 20% validation
+    loss, acc = m.evaluate(Xte, yte, verbose=0)      # test loss and accuracy
+    print(f"{name}: test acc={acc:.4f}, loss={loss:.4f}, time={time.time() - t:.0f}s, params={m.count_params()}")  # print results for this model

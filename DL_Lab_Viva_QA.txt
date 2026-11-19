@@ -1,0 +1,482 @@
+DEEP LEARNING AND NEURAL NETWORKS LAB (230GAIB91_06) - VIVA QUESTIONS AND ANSWERS, EXPERIMENTS 1-12
+==========================================================================================
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 1: PERCEPTRON (NumPy)
+------------------------------------------------------------------------------------------
+Q1. What is a perceptron?
+A. The simplest single-neuron model. It computes a weighted sum of inputs plus bias and passes it through a step function to give a binary output: y = 1 if w.x + b >= 0, else 0.
+
+Q2. State the perceptron learning rule.
+A. w = w + eta*(t - y)*x and b = b + eta*(t - y), where t is the target, y the prediction and eta the learning rate. Weights change only on misclassified samples.
+
+Q3. What is the role of the bias?
+A. It shifts the decision boundary away from the origin so it need not pass through (0,0).
+
+Q4. What type of data can a perceptron classify?
+A. Only linearly separable data.
+
+Q5. Why can't a perceptron solve XOR?
+A. XOR is not linearly separable; no single straight line separates its classes. It needs a hidden layer (MLP).
+
+Q6. What is the perceptron convergence theorem?
+A. If the data is linearly separable and eta > 0, the learning rule converges to a separating solution in a finite number of updates.
+
+Q7. What is the equation of the decision boundary in 2D?
+A. w1*x1 + w2*x2 + b = 0, i.e. x2 = -(w1*x1 + b)/w2.
+
+Q8. What does the learning rate do?
+A. It controls the step size of weight updates. For a perceptron starting from zero weights it mainly affects scale, not whether it converges.
+
+Q9. What is an epoch?
+A. One complete pass over the whole training set.
+
+Q10. Which activation does the perceptron use, and what is its drawback?
+A. The step (Heaviside) function. It is not differentiable, so gradient descent cannot be used.
+
+Q11. Difference between perceptron and logistic regression?
+A. The perceptron uses a hard threshold and mistake-driven updates; logistic regression uses the sigmoid, gives probabilities, and is trained by gradient descent on log loss.
+
+Q12. What happens if the data is not linearly separable?
+A. The weights never settle and the algorithm keeps oscillating; training must be stopped by a max-epoch limit.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 2: MLP (TensorFlow/Keras) ON IRIS / MNIST
+------------------------------------------------------------------------------------------
+Q1. What is an MLP?
+A. A feedforward network with an input layer, one or more hidden layers and an output layer, fully connected, with non-linear activations.
+
+Q2. Why are non-linear activations needed?
+A. Without them, stacked layers collapse into a single linear transformation, so the network could not learn non-linear boundaries.
+
+Q3. Which activation and loss did you use for multi-class output?
+A. Softmax in the output layer with categorical (or sparse categorical) cross-entropy loss.
+
+Q4. What is the role of the optimizer?
+A. It updates weights using gradients to minimize loss (e.g. SGD, Adam).
+
+Q5. What is Adam?
+A. An optimizer combining momentum (first moment) and RMSProp-style adaptive learning rates (second moment) per parameter.
+
+Q6. Difference between sparse_categorical_crossentropy and categorical_crossentropy?
+A. Sparse takes integer labels; categorical needs one-hot encoded labels.
+
+Q7. Why normalize/scale the inputs?
+A. It speeds up and stabilizes training and keeps features on similar ranges (MNIST pixels /255, Iris with StandardScaler).
+
+Q8. What are epochs, batch size and iterations?
+A. Epoch = one pass over the data; batch size = samples per weight update; iterations per epoch = N / batch size.
+
+Q9. How do you detect overfitting?
+A. Training accuracy keeps rising while validation accuracy stagnates or falls.
+
+Q10. How can overfitting be reduced?
+A. Dropout, regularization (L1/L2), early stopping, more data, smaller model, data augmentation.
+
+Q11. Why split data into train and test sets?
+A. To measure generalization on unseen data.
+
+Q12. What is the Flatten layer for?
+A. It converts 28x28 images into a 784-element vector for dense layers.
+
+Q13. How many parameters in Dense(128) after 784 inputs?
+A. 784*128 + 128 = 100,480.
+
+Q14. Which metrics were used?
+A. Accuracy on test set (optionally confusion matrix and classification report).
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 3: BACKPROPAGATION FROM SCRATCH
+------------------------------------------------------------------------------------------
+Q1. What is backpropagation?
+A. An algorithm that computes the gradient of the loss w.r.t. every weight by applying the chain rule backward from output to input.
+
+Q2. Write the chain rule for a weight in the output layer.
+A. dL/dW2 = dL/da2 * da2/dz2 * dz2/dW2.
+
+Q3. What are the steps of one training iteration?
+A. Forward pass, loss computation, backward pass (gradients), weight update.
+
+Q4. Derivative of sigmoid?
+A. sigma'(z) = sigma(z)*(1 - sigma(z)).
+
+Q5. What is the vanishing gradient problem?
+A. Gradients shrink as they pass through many sigmoid/tanh layers (derivative <= 0.25 for sigmoid), so early layers learn very slowly.
+
+Q6. What is the weight update rule?
+A. W = W - eta * dL/dW.
+
+Q7. Why is XOR a good toy dataset?
+A. It is not linearly separable, so it demonstrates the need for a hidden layer and backpropagation.
+
+Q8. Why initialize weights randomly?
+A. Identical (e.g. zero) weights give identical gradients, so hidden neurons stay symmetric and learn the same thing.
+
+Q9. Which loss did you use?
+A. Mean squared error (or binary cross-entropy).
+
+Q10. How do you verify gradients are correct?
+A. Gradient checking: compare with numerical gradient (L(w+e) - L(w-e)) / 2e.
+
+Q11. What does the visualization of weight updates show?
+A. How gradient magnitudes and weights change per epoch, and that loss decreases as updates become smaller near convergence.
+
+Q12. What is a local minimum?
+A. A point where the gradient is zero but loss is not the global lowest; in high dimensions saddle points are more common.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 4: ACTIVATION FUNCTION COMPARISON
+------------------------------------------------------------------------------------------
+Q1. Give formulas: sigmoid, tanh, ReLU, Leaky ReLU.
+A. Sigmoid = 1/(1+e^-x), range (0,1). Tanh = (e^x - e^-x)/(e^x + e^-x), range (-1,1). ReLU = max(0,x). Leaky ReLU = x if x>0 else alpha*x (alpha ~0.01).
+
+Q2. Which activation converges fastest usually and why?
+A. ReLU/Leaky ReLU; they do not saturate for positive inputs and are cheap to compute.
+
+Q3. What is the dying ReLU problem?
+A. Neurons with permanently negative input output 0 with zero gradient and stop learning.
+
+Q4. How does Leaky ReLU fix it?
+A. It keeps a small non-zero slope for negative inputs so gradients still flow.
+
+Q5. Why is tanh preferred over sigmoid in hidden layers?
+A. It is zero-centred, giving better-behaved gradient updates.
+
+Q6. Why does sigmoid cause slow training?
+A. It saturates at extremes (gradient ~0) and is not zero-centred.
+
+Q7. Which activation for binary and multi-class outputs?
+A. Sigmoid for binary, softmax for multi-class.
+
+Q8. Which activation for regression output?
+A. Linear (no activation).
+
+Q9. How did you compare the activations?
+A. Same architecture, data, optimizer and epochs; compared loss curves (convergence speed) and final test accuracy.
+
+Q10. What is a saturating activation?
+A. One whose output flattens for large |x| so the derivative approaches zero (sigmoid, tanh).
+
+Q11. What are other activations?
+A. ELU, SELU, GELU, Swish, Softplus.
+
+Q12. Why is weight initialization related to activation choice?
+A. Xavier/Glorot suits sigmoid/tanh; He initialization suits ReLU family.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 5: LINEAR REGRESSION, LOGISTIC REGRESSION, k-NN FROM SCRATCH
+------------------------------------------------------------------------------------------
+Q1. What is linear regression?
+A. A model that predicts a continuous value as y = w.x + b by minimizing squared error.
+
+Q2. Closed-form solution?
+A. Normal equation: w = (X^T X)^-1 X^T y.
+
+Q3. What is logistic regression?
+A. A classification model applying the sigmoid to a linear combination to give class probability; trained with log loss.
+
+Q4. Loss function of logistic regression?
+A. Binary cross-entropy: -[y log p + (1-y) log(1-p)].
+
+Q5. Why not use MSE for logistic regression?
+A. With the sigmoid it gives a non-convex loss.
+
+Q6. How does k-NN work?
+A. It stores the training data and classifies a point by majority vote among its k nearest neighbours (by distance).
+
+Q7. Which distance metrics are used?
+A. Euclidean, Manhattan, Minkowski, cosine.
+
+Q8. Effect of k?
+A. Small k: low bias, high variance (overfit). Large k: high bias, smoother boundary (underfit). Use odd k for binary classes.
+
+Q9. Why is k-NN called lazy learning?
+A. There is no training phase; all computation occurs at prediction time.
+
+Q10. Computational complexity of k-NN prediction?
+A. O(n*d) per query for brute force; slow for large datasets.
+
+Q11. Why scale features for k-NN?
+A. Distance is dominated by features with large ranges.
+
+Q12. Compare the three algorithms.
+A. Linear regression: regression, fast, closed-form. Logistic: classification, fast training/prediction. k-NN: non-parametric, no training, slow prediction.
+
+Q13. Metrics for regression vs classification?
+A. Regression: MSE, RMSE, R2. Classification: accuracy, precision, recall, F1.
+
+Q14. What is R2?
+A. Proportion of variance in y explained by the model: 1 - SSres/SStot.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 6: CLUSTERING (k-MEANS, HIERARCHICAL)
+------------------------------------------------------------------------------------------
+Q1. What is clustering?
+A. Unsupervised grouping of similar data points without labels.
+
+Q2. Steps of k-means?
+A. Choose k, initialize centroids, assign points to nearest centroid, recompute centroids as cluster means, repeat until assignments stop changing.
+
+Q3. What objective does k-means minimize?
+A. Within-cluster sum of squared distances (inertia).
+
+Q4. How do you choose k?
+A. Elbow method (inertia vs k) and the silhouette score.
+
+Q5. What is the silhouette score?
+A. s = (b - a)/max(a,b), where a = mean intra-cluster distance and b = mean nearest-other-cluster distance. Range -1 to 1; higher is better.
+
+Q6. Limitations of k-means?
+A. Needs k beforehand, sensitive to initialization and outliers, assumes spherical equally sized clusters.
+
+Q7. What is k-means++?
+A. A smarter initialization that spreads initial centroids apart.
+
+Q8. Types of hierarchical clustering?
+A. Agglomerative (bottom-up merge) and divisive (top-down split).
+
+Q9. What is a dendrogram?
+A. A tree diagram showing the merge order and distances; cutting it at a height gives clusters.
+
+Q10. Linkage methods?
+A. Single (min distance), complete (max), average, Ward (minimizes variance increase).
+
+Q11. k-means vs hierarchical?
+A. k-means is faster and needs k; hierarchical needs no k up front, gives a dendrogram, but is O(n^2) or worse.
+
+Q12. Why scale data before clustering?
+A. Distance-based; large-scale features dominate.
+
+Q13. Is clustering supervised?
+A. No, unsupervised.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 7: FNN vs CNN vs RNN
+------------------------------------------------------------------------------------------
+Q1. What is an FNN?
+A. A network where information flows only forward, with no loops or spatial/temporal structure handling.
+
+Q2. What is a CNN and why is it good for images?
+A. It uses convolution filters with shared weights and local connectivity to extract spatial features, with far fewer parameters than dense layers.
+
+Q3. What is an RNN?
+A. A network with a hidden state fed back at each step, suited to sequences (text, time series).
+
+Q4. Why is an FNN poor for images?
+A. It ignores spatial structure and needs very many parameters.
+
+Q5. Why use an Embedding layer for IMDB?
+A. It maps word indices to dense learned vectors capturing semantic similarity.
+
+Q6. Which architecture is the most computationally expensive?
+A. Usually the RNN/LSTM (sequential, cannot be parallelized across time); CNN is costly on large images, FNN is cheapest.
+
+Q7. Expected result on CIFAR-10?
+A. CNN > FNN in accuracy.
+
+Q8. What is parameter sharing?
+A. The same filter weights are applied at all spatial positions.
+
+Q9. What is pooling?
+A. Down-sampling feature maps (max/average) to reduce size and add translation invariance.
+
+Q10. What is padding and stride?
+A. Padding adds border pixels to preserve size; stride is the filter step size.
+
+Q11. Why does the RNN face vanishing gradients?
+A. Gradients are multiplied through many time steps via backpropagation through time.
+
+Q12. How did you compare models?
+A. Test accuracy, training time and number of parameters.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 8: GRADIENT DESCENT
+------------------------------------------------------------------------------------------
+Q1. What is gradient descent?
+A. An iterative optimization algorithm that moves parameters opposite to the gradient of the loss: theta = theta - eta * grad.
+
+Q2. Cost function for linear regression?
+A. J = (1/2m) * sum((h(x) - y)^2).
+
+Q3. Gradients for w and b?
+A. dJ/dw = (1/m) * X^T (Xw + b - y); dJ/db = (1/m) * sum(Xw + b - y).
+
+Q4. Effect of too large a learning rate?
+A. Overshoots and may diverge.
+
+Q5. Effect of too small a learning rate?
+A. Very slow convergence.
+
+Q6. Types of gradient descent?
+A. Batch (all data), stochastic (one sample), mini-batch (small batches).
+
+Q7. Is the linear regression cost convex?
+A. Yes, so there is one global minimum.
+
+Q8. How do you know it has converged?
+A. Cost stops decreasing noticeably, or the gradient norm is near zero.
+
+Q9. Why plot cost vs iterations?
+A. To verify convergence and tune the learning rate.
+
+Q10. Why scale features?
+A. It makes the cost contour rounder, so convergence is faster.
+
+Q11. Variants/optimizers?
+A. Momentum, RMSProp, Adam, Adagrad.
+
+Q12. Gradient descent vs normal equation?
+A. GD is iterative and scales to large features; the normal equation is exact but O(n^3) due to matrix inversion.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 9: MATRIX OPERATIONS AND NN FORWARD/BACKWARD
+------------------------------------------------------------------------------------------
+Q1. How is a layer computed with matrices?
+A. Z = X.W + b, A = f(Z), with X of shape (m, n_in) and W of shape (n_in, n_out).
+
+Q2. Difference between * and np.dot / @ in NumPy?
+A. * is element-wise (Hadamard); np.dot or @ is matrix multiplication.
+
+Q3. Condition for matrix multiplication?
+A. Columns of the first must equal rows of the second: (m x n).(n x p) = (m x p).
+
+Q4. What is broadcasting?
+A. NumPy automatically expands arrays of different shapes for element-wise operations (e.g. adding bias to each row).
+
+Q5. Backprop gradients in matrix form (sigmoid, MSE)?
+A. dZ2 = A2 - Y; dW2 = A1^T.dZ2 / m; dA1 = dZ2.W2^T; dZ1 = dA1 * A1*(1-A1); dW1 = X^T.dZ1 / m.
+
+Q6. Why vectorization?
+A. It avoids Python loops and uses optimized BLAS routines, so it is much faster.
+
+Q7. What does transpose do?
+A. Swaps rows and columns; required to align shapes in gradient formulas.
+
+Q8. Shapes in a 2-4-1 network?
+A. W1: 2x4, b1: 1x4, W2: 4x1, b2: 1x1.
+
+Q9. Why visualize intermediate outputs?
+A. To see how activations and gradients flow and change layer by layer.
+
+Q10. What is the Hadamard product used for in backprop?
+A. Multiplying upstream gradients by the activation derivative element-wise.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 10: CNN ARCHITECTURES (MNIST/CIFAR-10)
+------------------------------------------------------------------------------------------
+Q1. Layers in a CNN?
+A. Convolution, activation (ReLU), pooling, flatten, dense, softmax output.
+
+Q2. What does a convolution filter do?
+A. Slides over the input, computing dot products to detect features like edges and textures.
+
+Q3. Output size formula?
+A. (W - F + 2P)/S + 1.
+
+Q4. Parameters in Conv2D(32, 3x3) on a 1-channel input?
+A. (3*3*1 + 1)*32 = 320.
+
+Q5. Max pooling vs average pooling?
+A. Max picks the strongest activation; average smooths. Max is more common.
+
+Q6. Effect of more layers?
+A. Learns more abstract features but risks overfitting and vanishing gradients, and is costlier.
+
+Q7. Effect of filter size?
+A. Small (3x3) captures fine detail with fewer params; large captures wider context.
+
+Q8. 'same' vs 'valid' padding?
+A. same keeps output size (zero-padding); valid applies no padding, so the size shrinks.
+
+Q9. Role of Dropout and BatchNorm?
+A. Dropout randomly deactivates neurons to reduce overfitting; BatchNorm normalizes layer inputs for stable and faster training.
+
+Q10. Why does a CNN beat an MLP on images?
+A. Local connectivity, weight sharing and translation invariance.
+
+Q11. Famous CNNs?
+A. LeNet, AlexNet, VGG, ResNet, Inception.
+
+Q12. Data augmentation?
+A. Random flips, rotations and shifts to enlarge the training set and improve generalization.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 11: TRANSFER LEARNING / FINE-TUNING
+------------------------------------------------------------------------------------------
+Q1. What is transfer learning?
+A. Reusing a model pre-trained on a large dataset (e.g. ImageNet) as a starting point for a new task.
+
+Q2. Feature extraction vs fine-tuning?
+A. Feature extraction freezes the base and trains only a new classifier head; fine-tuning also unfreezes some top layers and trains with a low learning rate.
+
+Q3. Why freeze layers?
+A. To keep the learned general features and prevent destroying them with large early gradients.
+
+Q4. Why use a low learning rate in fine-tuning?
+A. To make small adjustments without erasing pre-trained knowledge.
+
+Q5. Benefits over training from scratch?
+A. Faster convergence, higher accuracy with less data, less compute.
+
+Q6. When does transfer learning fail?
+A. When source and target domains are very different.
+
+Q7. What is include_top=False?
+A. It removes the original ImageNet classification layers so a custom head can be added.
+
+Q8. Why resize and preprocess inputs?
+A. Models expect a fixed size (e.g. 224x224) and a specific preprocessing (preprocess_input).
+
+Q9. What is ResNet's key idea?
+A. Residual (skip) connections: output = F(x) + x, which eases training of deep networks and mitigates vanishing gradients.
+
+Q10. What is MobileNet?
+A. A lightweight network using depthwise separable convolutions, suited to mobile and edge devices.
+
+Q11. What is VGG16?
+A. A 16-layer CNN using stacked 3x3 convolutions, with about 138M parameters.
+
+Q12. What is GlobalAveragePooling?
+A. It averages each feature map to a single value, reducing parameters versus Flatten.
+
+------------------------------------------------------------------------------------------
+EXPERIMENT 12: RNN, LSTM, GRU
+------------------------------------------------------------------------------------------
+Q1. How does an RNN work?
+A. h_t = f(W_x x_t + W_h h_(t-1) + b); the hidden state carries memory of previous inputs.
+
+Q2. What is BPTT?
+A. Backpropagation Through Time: unrolling the network over time steps and applying backprop.
+
+Q3. What problem do vanilla RNNs have?
+A. Vanishing/exploding gradients, so they cannot learn long-term dependencies.
+
+Q4. What is an LSTM?
+A. An RNN with a cell state and three gates (forget, input, output) that control what to keep, add and expose.
+
+Q5. What is a GRU?
+A. A simplified LSTM with two gates (update, reset) and no separate cell state; fewer parameters and faster.
+
+Q6. LSTM vs GRU?
+A. LSTM: more parameters, may be better on long sequences. GRU: simpler, faster, similar accuracy often.
+
+Q7. Why pad sequences?
+A. Batches need equal lengths; pad_sequences makes all reviews the same length.
+
+Q8. Role of Embedding layer?
+A. Converts integer word IDs into dense vectors learned during training.
+
+Q9. Output layer for sentiment analysis?
+A. Dense(1, sigmoid) with binary cross-entropy.
+
+Q10. Metrics used?
+A. Accuracy, loss, optionally precision/recall/F1.
+
+Q11. What is exploding gradient and its fix?
+A. Gradients grow very large; fix with gradient clipping.
+
+Q12. What does return_sequences=True do?
+A. Returns the output at every time step (needed to stack recurrent layers) instead of only the last.
+
+Q13. Other uses of RNNs?
+A. Language modelling, machine translation, time-series forecasting, speech recognition.
